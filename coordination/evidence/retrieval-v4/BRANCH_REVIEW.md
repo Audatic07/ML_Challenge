@@ -55,8 +55,9 @@ on a separate nested subset of historical validation. Every reserved target is
 excluded from fit negatives. The last 10% remains unopened. LightGBM fits only
 supplied labels, with hard negatives from the full searchable target pool.
 
-The bounded pilot runs only after its spend cap and job ID are recorded. First
-inspect candidate oracle U and country slices; for the 0.99 target aim for U>=.997.
+The launch uses 400k fit S1s, 10k stopping S1s, the full fixed 100k development
+set for tuning, and a six-hour enforced runtime cap. First inspect candidate
+oracle U and country slices; for the 0.99 target aim for U>=.997.
 If retrieval dominates, repair it before adding model capacity. If matching
 dominates, grow the fit set and use fit-only hard negatives. No sample or training
 score establishes the target.
@@ -67,6 +68,6 @@ unlabelled; repeated exact fingerprints are not audited. Unidecode is GPL and
 requires organizer interpretation for a release. LightGBM is MIT. No external
 pretrained weights or business lookup data are used.
 
-The v4 pilot is experimental and cannot replace the incumbent without paired
-validation. Final test-set retrieval/inference and release validation are not yet
-part of this pilot.
+The v4 run is experimental and cannot replace the incumbent without paired
+validation. Final test-set retrieval/inference and release validation remain
+separate follow-up steps.

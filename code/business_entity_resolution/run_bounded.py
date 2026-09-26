@@ -21,15 +21,22 @@ def stop_app(args):
     client.delete_app(DomainId=args.domain,SpaceName=args.space,AppType='JupyterLab',AppName='default')
 
 
-def backup(args):
+def backup(args, force=False):
     import boto3
     s3 = boto3.client('s3',region_name=args.region)
     names = ['run_manifest.json','model_manifest.json','model.txt','tune_retrieval_metrics.json',
              'tune_per_query.parquet','tune_scores.parquet','complete.json','job_status.json','train.log']
+    index = args.work/'uploaded.json'
+    uploaded = json.loads(index.read_text()) if index.exists() else {}
+    changed = False
     for name in names:
         path = args.work / name
-        if path.exists():
+        if path.exists() and (force or uploaded.get(name) != [path.stat().st_size,path.stat().st_mtime_ns]):
             s3.upload_file(str(path),args.bucket,f'{args.prefix}/{name}',ExtraArgs={'ServerSideEncryption':'AES256'})
+            uploaded[name]=[path.stat().st_size,path.stat().st_mtime_ns]
+            changed=True
+    if changed:
+        index.write_text(json.dumps(uploaded,indent=2))
 
 
 def main():
@@ -93,7 +100,7 @@ def main():
         finally:
             (args.work/'job_status.json').write_text(json.dumps(status,indent=2))
             try:
-                backup(args)
+                backup(args,force=True)
             finally:
                 # Leave watchdog running until the API acknowledges shutdown.
                 stop_app(args)

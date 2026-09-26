@@ -1,7 +1,7 @@
 """Full-catalog v4 experiment with fixed fit/stop/tune/audit partitions.
 
 Example: python -m src.v4_train --data /data/dataset --work /work/v4 \
-    --fit 30000 --stop 2000 --tune 5000 --rounds 1600 --workers 8
+    --fit 400000 --stop 10000 --tune 100000 --rounds 2200 --workers 8
 Use --stage oracle for a retrieval-only diagnostic on canonical tuning queries.
 The audit partition is reserved and is never evaluated here.
 """
@@ -136,12 +136,12 @@ def main():
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--cache', type=Path)
-    parser.add_argument('--fit', type=int, default=30000)
-    parser.add_argument('--stop', type=int, default=2000)
-    parser.add_argument('--tune', type=int, default=5000)
-    parser.add_argument('--rounds', type=int, default=1600)
+    parser.add_argument('--fit', type=int, default=400000)
+    parser.add_argument('--stop', type=int, default=10000)
+    parser.add_argument('--tune', type=int, default=100000)
+    parser.add_argument('--rounds', type=int, default=2200)
     parser.add_argument('--workers', type=int, default=4)
-    parser.add_argument('--top-k', type=int, default=30)
+    parser.add_argument('--top-k', type=int, default=20)
     parser.add_argument('--max-df', type=float, default=.1)
     parser.add_argument('--dimensions', type=int, default=2**19)
     parser.add_argument('--stage', choices=['oracle','train'], default='train')

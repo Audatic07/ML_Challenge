@@ -1,0 +1,203 @@
+{
+  "schema_version": 2,
+  "epoch": 0,
+  "phase": "bootstrap",
+  "published": false,
+  "updated_at": null,
+  "objective": {
+    "metric": "macro_per_s1_f0.5",
+    "target": 0.98,
+    "verified_score": null
+  },
+  "contract_version": "2.0-proposed",
+  "contract_accepted": false,
+  "integration_commit": null,
+  "dataset_manifest": null,
+  "split_manifest": null,
+  "incumbent_manifest": null,
+  "champion_manifest": null,
+  "sessions": [],
+  "claims": [],
+  "integration_claim": null,
+  "submission_claim": null,
+  "tasks": [
+    {
+      "id": "P00",
+      "status": "ready",
+      "owner_session": null,
+      "depends_on": [],
+      "optional": false,
+      "summary": "Scaffold package and brief coordination setup",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P01",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P00"
+      ],
+      "optional": false,
+      "summary": "Audit, immutable grouped split and exact macro scorer",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P02",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P00"
+      ],
+      "optional": false,
+      "summary": "Two-file writer and strict validator with fixtures",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P03",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P01"
+      ],
+      "optional": false,
+      "summary": "Independent name/address retrieval, full-pool oracle and runtime",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P04",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P01",
+        "P03"
+      ],
+      "optional": false,
+      "summary": "Batched features, supervised tree and development predictions",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P05",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P02",
+        "P03",
+        "P04"
+      ],
+      "optional": false,
+      "summary": "Threshold selection, benchmark and complete incumbent",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P06",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P05"
+      ],
+      "optional": true,
+      "summary": "Repair largest measured retrieval or classification loss",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P07",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P05"
+      ],
+      "optional": true,
+      "summary": "OOF no-match/prefix-utility experiment if justified",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P08",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P05"
+      ],
+      "optional": true,
+      "summary": "Bounded rescue or neural pilot if justified and permissible",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P09",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P05"
+      ],
+      "optional": false,
+      "summary": "Country-transfer checks and clean reproduction rehearsal",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P10",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P05",
+        "P09"
+      ],
+      "optional": false,
+      "summary": "Locked audit, champion freeze, final inference and validation",
+      "code_sha": null,
+      "evidence": []
+    },
+    {
+      "id": "P11",
+      "status": "planned",
+      "owner_session": null,
+      "depends_on": [
+        "P02",
+        "P10"
+      ],
+      "optional": false,
+      "summary": "Package, documentation and authorized portal submission",
+      "code_sha": null,
+      "evidence": []
+    }
+  ],
+  "active_job_reservations": [],
+  "submission_history": [],
+  "handoffs": [],
+  "budget": {
+    "currency": "USD",
+    "assumed_known_accounts": 3,
+    "approx_balance_each": 100,
+    "fourth_account_balance": null,
+    "planned_active_cap": 210,
+    "reserve": 90,
+    "verified_balances": [],
+    "actual_spend": null,
+    "agent_usage_is_separate": true
+  },
+  "deadlines": {
+    "official": "2026-09-27T23:59:00+05:30",
+    "internal": "2026-09-27T21:30:00+05:30"
+  },
+  "decisions": [
+    {
+      "id": "PLAN-20260926",
+      "basis": "User replaced fixed roles and requested a Sol-ready 0.98 strategy",
+      "decision": "Any agent can claim any useful task; Sol may implement the entire critical path",
+      "technical_plan": "output/hackathon/SOL_IMPLEMENTATION_PLAN.md"
+    }
+  ],
+  "operator_dependencies": [
+    "Git authentication and agreed publication destination when publishing",
+    "Actual AWS balances and authorization before paid jobs",
+    "Designated portal access and eligibility confirmation"
+  ]
+}

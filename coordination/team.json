@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "execution_model": "opportunistic_task_claims",
+  "remote": "origin",
+  "integration_branch": "main",
+  "control_branch": "codex/control",
+  "fixed_roles": false,
+  "sync_interval_minutes": 10,
+  "branch_pattern": "codex/<task>-<session>",
+  "technical_plan": "output/hackathon/SOL_IMPLEMENTATION_PLAN.md",
+  "startup_prompt": "coordination/prompts/SOL_START.md",
+  "protocol": "coordination/PROTOCOL.md",
+  "implementation_status": "Documented Git claim protocol; no new coordination automation deployed"
+}

@@ -1,1 +1,14 @@
 6ab10eb3b23ba_student_resource.zip
+/.team-local/
+/student_resource/
+/artifacts/
+/runs/
+/data/
+/tmp/
+/.venv/
+/output/submissions/
+__pycache__/
+*.pyc
+.env
+.env.*
+CLAUDE.local.md

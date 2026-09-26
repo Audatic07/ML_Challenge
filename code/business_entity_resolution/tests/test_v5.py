@@ -67,6 +67,31 @@ def make_split(root, split, countries, n, rng):
 import pytest
 
 
+def test_blocked_search_matches_unblocked(tmp_path):
+    import src.v5_dist as v5
+    rng = random.Random(3)
+    data = tmp_path / "dataset"
+    make_split(data, "train", ["US"], 300, rng)
+    plan = {"max_df": {"char": 0.5, "word": 0.5}, "top_k": 4}
+    specs = v5.channel_specs(plan)
+    queries = v5.load_query_rows(data, "train", list(range(0, 300, 7)))
+    results = []
+    for block in (10_000, 17):
+        v5.BLOCK = block
+        catalog = v5.Catalog(data, "train", "US", 2 ** 18, specs, 1)
+        if block == 17:
+            assert all(len(blocks) > 1 for mats in catalog.mats.values() for blocks in mats.values())
+        results.append(catalog.search(queries, 1).sort("q", "t"))
+    v5.BLOCK = 250_000
+    # identical top-k scores per query and channel (targets may differ only among exact ties)
+    a, b = results
+    for channel in specs:
+        def scores(frame):
+            return (frame.filter(pl.col(channel) > 0).group_by("q")
+                    .agg(pl.col(channel).sort(descending=True).round(5)).sort("q"))
+        assert scores(a).equals(scores(b)), channel
+
+
 @pytest.mark.parametrize("variant", [[], ["--norm", "v5", "--anchors"]])
 def test_distributed_pipeline_end_to_end(tmp_path, variant):
     rng = random.Random(7)
@@ -105,3 +130,19 @@ def test_distributed_pipeline_end_to_end(tmp_path, variant):
     report = json.loads((store / "final" / "report.json").read_text())
     if validator.exists():
         assert report["validator_exit"] == 0, report["validator_output"]
+    # retrieval benchmark task on the same data and store
+    rows = sorted(plan["tune_rows"])
+    char = {"analyzer": "char_wb", "ngram": [3, 4], "max_df": 0.5}
+    bench = {"id": "bench-x", "kind": "bench", "split": "train", "country": "US", "priority": 0, "min_mem_gb": 1,
+             "rows": [r for r, c in zip(plan["tune_rows"], plan["tune_country"]) if c == "US"],
+             "channels": {"name_char": {"view": "core", **char, "top_k": 5, "ks": [2, 5]},
+                          "combo": {"view": "combo", **char, "top_k": 5, "ks": [5]}},
+             "unions": [["name_char@2", "combo@5"]]}
+    (store / "tasks" / "bench-x.json").write_text(json.dumps(bench))
+    subprocess.run(common + ["worker", "--data", str(data), "--root", str(store), "--work", str(tmp_path / "w2"),
+                             "--name", "local2", "--workers", "2", "--mem-gb", "64"], cwd=ROOT, check=True)
+    result = json.loads((store / "bench" / "bench-x.json").read_text())["results"]
+    assert set(result) == {"name_char@2", "name_char@5", "combo@5", "name_char@2 + combo@5"}
+    assert result["name_char@5"]["recall"] >= result["name_char@2"]["recall"]
+    assert result["name_char@2 + combo@5"]["U"] >= result["combo@5"]["U"]
+    assert rows

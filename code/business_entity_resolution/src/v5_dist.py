@@ -169,6 +169,14 @@ class Store:
                 return False
             raise
 
+    def etag(self, name):
+        try:
+            if self.root:
+                return str((self.root / name).stat().st_mtime_ns)
+            return self.s3.head_object(Bucket=self.bucket, Key=self.key(name))["ETag"]
+        except Exception:
+            return None
+
     def delete(self, name):
         if self.root:
             (self.root / name).unlink(missing_ok=True)
@@ -203,6 +211,102 @@ def weigh(matrix, idf):
     return normalize(matrix, copy=False).tocsr()
 
 
+def channel_specs(plan):
+    """Channel -> {view, analyzer, ngram, max_df, top_k}. Defaults reproduce the first v5 plan;
+    plan["channels"] adds channels (e.g. the combined name+address view `combo`) or overrides."""
+    specs = {}
+    for name, (view, analyzer, ngram) in CHANNELS.items():
+        cap = plan["max_df"]["char"] if analyzer.startswith("char") else plan["max_df"]["word"]
+        specs[name] = {"view": view, "analyzer": analyzer, "ngram": list(ngram), "max_df": cap,
+                       "top_k": plan["top_k"]}
+    for name, spec in (plan.get("channels") or {}).items():
+        specs[name] = {**specs.get(name, {}), **spec}
+    return specs
+
+
+def extra_channels(plan):
+    return [c for c in channel_specs(plan) if c not in CHANNELS]
+
+
+def with_views(frame, specs):
+    if any(s["view"] == "combo" for s in specs.values()) and "combo" not in frame.columns:
+        frame = frame.with_columns(pl.concat_str([pl.col("core"), pl.col("addr_norm")], separator=" ").alias("combo"))
+    return frame
+
+
+def load_catalog_frame(data_dir, split, country, norm):
+    """Normalized targets of one country, source 2 rows then source 3, with global row ids."""
+    frames, offset = [], 0
+    for source in (2, 3):
+        for raw in raw_batches(Path(data_dir) / split / f"{split}_source{source}.tsv"):
+            raw = raw.with_row_index("row", offset=offset)
+            offset += len(raw)
+            raw = raw.filter(pl.col("country") == country)
+            if len(raw):
+                frames.append(normalized(raw.with_columns(pl.lit(source, pl.UInt8).alias("src")), norm))
+    if not frames:
+        raise ValueError(f"No {split} targets for country {country!r}")
+    frame = pl.concat(frames).rechunk()
+    src = frame["src"].to_numpy()
+    if np.any(np.diff(src.astype(np.int16)) < 0):
+        raise ValueError("Catalog rows must keep source 2 before source 3")
+    bounds = {s: (int(np.searchsorted(src, s)), int(np.searchsorted(src, s, side="right"))) for s in (2, 3)}
+    return frame, bounds
+
+
+BLOCK = 250_000  # targets per column block: keeps sparse_dot_topn's dense accumulator in cache
+
+
+def build_channel(frame, bounds, name, spec, dims, workers, block=None):
+    """IDF over the searchable catalog (no labels), then per-source lists of (offset, transposed
+    L2 block). Blocking changes speed only: top-k is merged exactly across blocks."""
+    block = block or BLOCK
+    n = len(frame)
+    parts, count = {}, np.zeros(dims, dtype=np.int64)
+    for s, (a, b) in bounds.items():
+        if b > a:
+            parts[s] = vectorize(name, frame[spec["view"]].slice(a, b - a).to_list(), dims, workers, spec=spec)
+            count += np.bincount(parts[s].indices, minlength=dims)
+    idf = (1 + np.log((1 + n) / (1 + count))).astype(np.float32)
+    idf[(count == 0) | (count > spec["max_df"] * n)] = 0
+    mats = {}
+    for s in list(parts):
+        weighted = weigh(parts.pop(s), idf)
+        mats[s] = [(first, weighted[first:first + block].T.tocsr()) for first in range(0, weighted.shape[0], block)]
+        del weighted
+        gc.collect()
+    return idf, mats
+
+
+def search_channel(texts, idf, mats, bounds, name, spec, dims, workers, top_k=None, batch=4096):
+    """Top-k of one channel within each source: DataFrame(q, t, score)."""
+    from sparse_dot_topn import sp_matmul_topn
+    k = top_k or spec["top_k"]
+    query = weigh(make_vectorizer(name, dims, spec).transform(texts).tocsr(), idf)
+    out = []
+    for s, (a, b) in bounds.items():
+        if s not in mats:
+            continue
+        found = []
+        for offset, target in mats[s]:
+            for first in range(0, query.shape[0], batch):
+                block = query[first:first + batch]
+                if block.nnz == 0:
+                    continue
+                hits = sp_matmul_topn(block, target, top_n=k, threshold=1e-6, sort=False, n_threads=workers).tocoo()
+                found.append(pl.DataFrame({"q": (hits.row + first).astype(np.uint32),
+                                           "t": (hits.col + a + offset).astype(np.uint32),
+                                           "score": hits.data.astype(np.float32)}))
+        if not found:
+            continue
+        found = pl.concat(found)
+        if len(mats[s]) > 1:
+            found = (found.sort(["q", "score", "t"], descending=[False, True, False])
+                     .group_by("q", maintain_order=True).head(k))
+        out.append(found)
+    return pl.concat(out) if out else pl.DataFrame(schema={"q": pl.UInt32, "t": pl.UInt32, "score": pl.Float32})
+
+
 class Catalog:
     """Every target of one country in one split, one IDF-weighted L2 matrix per channel/source.
 
@@ -210,73 +314,35 @@ class Catalog:
     Row order: source 2 then source 3, preserving the global S2+S3 target row numbers.
     """
 
-    def __init__(self, data_dir, split, country, dims, max_df, workers, norm="v4"):
+    def __init__(self, data_dir, split, country, dims, specs, workers, norm="v4"):
         started = time.monotonic()
         self.key = (split, country)
-        frames, offset = [], 0
-        for source in (2, 3):
-            for raw in raw_batches(Path(data_dir) / split / f"{split}_source{source}.tsv"):
-                raw = raw.with_row_index("row", offset=offset)
-                offset += len(raw)
-                raw = raw.filter(pl.col("country") == country)
-                if len(raw):
-                    frames.append(normalized(raw.with_columns(pl.lit(source, pl.UInt8).alias("src")), norm))
-        if not frames:
-            raise ValueError(f"No {split} targets for country {country!r}")
-        self.frame = pl.concat(frames).rechunk()
-        del frames
-        src = self.frame["src"].to_numpy()
-        if np.any(np.diff(src.astype(np.int16)) < 0):
-            raise ValueError("Catalog rows must keep source 2 before source 3")
-        self.bounds = {s: (int(np.searchsorted(src, s)), int(np.searchsorted(src, s, side="right"))) for s in (2, 3)}
+        self.frame, self.bounds = load_catalog_frame(data_dir, split, country, norm)
+        self.frame = with_views(self.frame, specs)
         self.rows = self.frame["row"].to_numpy()
-        self.dims, self.idf, self.mats = dims, {}, {}
-        n = len(self.frame)
-        log(f"catalog {split}/{country}: {n:,} targets normalized in {time.monotonic()-started:.0f}s")
-        for name in CHANNELS:
-            view = CHANNELS[name][0]
-            parts, count = {}, np.zeros(dims, dtype=np.int64)
-            for s, (a, b) in self.bounds.items():
-                if b > a:
-                    parts[s] = vectorize(name, self.frame[view].slice(a, b - a).to_list(), dims, workers)
-                    count += np.bincount(parts[s].indices, minlength=dims)
-            idf = (1 + np.log((1 + n) / (1 + count))).astype(np.float32)
-            idf[(count == 0) | (count > channel_df_cap(name, max_df) * n)] = 0
-            self.idf[name] = idf
-            for s in list(parts):
-                self.mats[name, s] = weigh(parts.pop(s), idf).T.tocsr()
-                gc.collect()
-            nnz = sum(self.mats[name, s].nnz for s in (2, 3) if (name, s) in self.mats)
+        self.dims, self.specs, self.idf, self.mats = dims, specs, {}, {}
+        log(f"catalog {split}/{country}: {len(self.frame):,} targets normalized in {time.monotonic()-started:.0f}s")
+        for name, spec in specs.items():
+            self.idf[name], self.mats[name] = build_channel(self.frame, self.bounds, name, spec, dims, workers)
+            nnz = sum(m.nnz for blocks in self.mats[name].values() for _, m in blocks)
             log(f"catalog {split}/{country}: channel {name} nnz={nnz:,} t={time.monotonic()-started:.0f}s")
+        if "combo" in self.frame.columns:
+            self.frame = self.frame.drop("combo")
         self.seconds = time.monotonic() - started
 
-    def search(self, queries, top_k, workers, batch=4096):
+    def search(self, queries, workers):
         """Per channel and source top-k, union without a final cap: (q, t, channel scores)."""
-        from sparse_dot_topn import sp_matmul_topn
-        schema = {"q": pl.UInt32, "t": pl.UInt32, "score": pl.Float32, "channel": pl.String}
+        queries = with_views(queries, self.specs)
         parts = []
-        for name in CHANNELS:
-            query = weigh(make_vectorizer(name, self.dims).transform(queries[CHANNELS[name][0]].to_list()).tocsr(),
-                          self.idf[name])
-            for s, (a, b) in self.bounds.items():
-                if (name, s) not in self.mats:
-                    continue
-                target = self.mats[name, s]
-                for first in range(0, query.shape[0], batch):
-                    block = query[first:first + batch]
-                    if block.nnz == 0:
-                        continue
-                    hits = sp_matmul_topn(block, target, top_n=top_k, threshold=1e-6, sort=False,
-                                          n_threads=workers).tocoo()
-                    parts.append(pl.DataFrame({"q": (hits.row + first).astype(np.uint32),
-                                               "t": (hits.col + a).astype(np.uint32),
-                                               "score": hits.data.astype(np.float32),
-                                               "channel": [name] * len(hits.data)}, schema=schema))
-        if not parts:
-            return pl.DataFrame(schema={"q": pl.UInt32, "t": pl.UInt32, **{c: pl.Float32 for c in CHANNELS}})
+        for name, spec in self.specs.items():
+            started = time.monotonic()
+            hits = search_channel(queries[spec["view"]].to_list(), self.idf[name], self.mats[name], self.bounds,
+                                  name, spec, self.dims, workers)
+            parts.append(hits.with_columns(pl.lit(name).alias("channel")))
+            log(f"   search {name}: {len(hits):,} hits in {time.monotonic()-started:.0f}s")
         pairs = pl.concat(parts)
         return (pairs.group_by("q", "t").agg([
-            pl.col("score").filter(pl.col("channel") == c).max().fill_null(0).alias(c) for c in CHANNELS])
+            pl.col("score").filter(pl.col("channel") == c).max().fill_null(0).alias(c) for c in self.specs])
             .sort("q", "t"))
 
 
@@ -285,7 +351,9 @@ ANCHOR = ["h_score", "h_gap", "h_rank", "anc_name_top", "anc_addr_top", "anc_nam
 
 
 def feature_list(plan):
-    return FEATURES + (ANCHOR if plan.get("anchors") else [])
+    extra = extra_channels(plan)
+    return (FEATURES + extra + [f"{c}_{suffix}" for c in extra for suffix in ("gap", "rank")]
+            + (ANCHOR if plan.get("anchors") else []))
 
 
 def anchor_features(frame, catalog, workers, anchors=3):
@@ -324,10 +392,13 @@ def anchor_features(frame, catalog, workers, anchors=3):
     return frame.with_columns(pl.col(ANCHOR).fill_null(-1).cast(pl.Float32))
 
 
-def pair_features(queries, cand, catalog, workers, chunk_q=4000, anchors=False):
+def pair_features(queries, cand, catalog, workers, chunk_q=4000, anchors=False, plan=None):
     """Features for every candidate. Chunks hold complete queries, so context is exact."""
     from .features import build
-    names = FEATURES + (ANCHOR if anchors else [])
+    plan = plan or {"anchors": anchors, "max_df": PLAN_DEFAULTS["max_df"], "top_k": PLAN_DEFAULTS["top_k"]}
+    names = feature_list({**plan, "anchors": anchors})
+    channels = [c for c in cand.columns if c not in ("q", "t")]
+    extra = [c for c in channels if c not in CHANNELS]
     frames = []
     q_rows = queries["row"].to_numpy()
     for first in range(0, len(queries), chunk_q):
@@ -335,13 +406,13 @@ def pair_features(queries, cand, catalog, workers, chunk_q=4000, anchors=False):
         if not len(sel):
             continue
         local = sel.select(pl.col("q").alias("s1"), "t",
-                           (100 * pl.max_horizontal(list(CHANNELS))).cast(pl.Float32).alias("bscore"),
+                           (100 * pl.max_horizontal(channels)).cast(pl.Float32).alias("bscore"),
                            pl.lit(0, pl.UInt16).alias("kmask"))
         frame = build(local, queries, catalog.frame)
         frame = frame.with_columns(extra_features(queries.gather(local["s1"]), catalog.frame.gather(local["t"]), workers)
-                                   + sel.select(list(CHANNELS)).get_columns())
+                                   + sel.select(channels).get_columns())
         context = []
-        for feature in CONTEXT:
+        for feature in CONTEXT + extra:
             context += [(pl.col(feature).max().over("s1") - pl.col(feature)).alias(f"{feature}_gap"),
                         pl.col(feature).rank("min", descending=True).over("s1").cast(pl.Float32).alias(f"{feature}_rank")]
         frame = frame.with_columns(context)
@@ -380,9 +451,9 @@ def run_feat(task, store, ctx):
     queries = load_query_rows(ctx.data, task["split"], task["rows"], ctx.plan.get("norm", "v4"))
     if len(queries) != len(task["rows"]) or set(queries["country"].unique()) != {task["country"]}:
         raise ValueError("Query shard does not match its planned rows/country")
-    cand = catalog.search(queries, ctx.plan["top_k"], ctx.workers)
+    cand = catalog.search(queries, ctx.workers)
     searched = time.monotonic() - started
-    feats = pair_features(queries, cand, catalog, ctx.workers, anchors=bool(ctx.plan.get("anchors")))
+    feats = pair_features(queries, cand, catalog, ctx.workers, anchors=bool(ctx.plan.get("anchors")), plan=ctx.plan)
     path = ctx.work / f"{task['id']}.parquet"
     feats.write_parquet(path, compression="zstd", compression_level=3)
     store.upload(path, f"feat/{task['id']}.parquet")
@@ -569,18 +640,27 @@ def run_final(task, store, ctx):
 
 # ---------------------------------------------------------------- worker
 class Context:
-    def __init__(self, data, work, workers, plan):
+    def __init__(self, data, work, workers, plan, prefix=""):
         self.data, self.work, self.workers, self.plan = Path(data), Path(work), workers, plan
+        self.prefix = prefix
         self._catalog = None
         self._booster = None
         self._manifest = None
 
+    def use(self, prefix, plan):
+        """Switch to another queue's plan; caches of a different queue are dropped lazily."""
+        if prefix != self.prefix:
+            self.prefix, self.plan = prefix, plan
+            self._booster = self._manifest = None
+
     def catalog(self, split, country):
-        if self._catalog is None or self._catalog.key != (split, country):
+        key = (self.prefix, split, country)
+        if self._catalog is None or getattr(self._catalog, "queue_key", None) != key:
             self._catalog = None
             gc.collect()
-            self._catalog = Catalog(self.data, split, country, self.plan["dims"], self.plan["max_df"], self.workers,
-                                    self.plan.get("norm", "v4"))
+            self._catalog = Catalog(self.data, split, country, self.plan["dims"], channel_specs(self.plan),
+                                    self.workers, self.plan.get("norm", "v4"))
+            self._catalog.queue_key = key
         return self._catalog
 
     def drop_catalog(self):
@@ -602,12 +682,74 @@ class Context:
         return self._booster
 
 
-RUNNERS = {"feat": run_feat, "train": run_train, "score": run_score, "final": run_final}
+def run_bench(task, store, ctx):
+    """Retrieval-only comparison of channel variants on labelled development queries.
+
+    Each channel is built on the full catalog of the country, searched once at its largest
+    k, and evaluated at every k in `ks` (rank within query and source). Unions of named
+    results give the candidate oracle U of a whole policy. No model is involved.
+    """
+    started = time.monotonic()
+    norm = task.get("norm", ctx.plan.get("norm", "v4"))
+    specs = task["channels"]
+    ctx.drop_catalog()
+    frame, bounds = load_catalog_frame(ctx.data, task["split"], task["country"], norm)
+    frame = with_views(frame, specs)
+    rows = np.asarray(task["rows"], dtype=np.uint32)
+    queries = with_views(load_query_rows(ctx.data, task["split"], rows, norm), specs)
+    truth, _ = truth_for(ctx.data, {"bench": rows}, np.array([], dtype=np.uint32))
+    truth = truth.select("s1", "target_id")
+    q_rows = queries["row"].to_numpy()
+    ids = frame["id"]
+    src3 = bounds[3][0]
+    g = truth.group_by("s1").len().rename({"len": "g"})
+    base = pl.DataFrame({"s1": pl.Series(rows)}).join(g, on="s1", how="left").fill_null(0)
+
+    def evaluate(cand):
+        hit = cand.join(truth, on=["s1", "target_id"])
+        r = hit.group_by("s1").len().rename({"len": "r"})
+        per = base.join(r, on="s1", how="left").fill_null(0).with_columns(
+            pl.when(pl.col("g") == 0).then(1.0).otherwise(5 * pl.col("r") / (4 * pl.col("r") + pl.col("g"))).alias("u"))
+        multi = per.filter(pl.col("g") > 0)
+        return {"U": float(per["u"].mean()), "recall": len(hit) / max(1, len(truth)),
+                "all_found": float((multi["r"] == multi["g"]).mean()), "pairs_per_query": len(cand) / len(rows)}
+
+    results, cands = {}, {}
+    for name, spec in specs.items():
+        t0 = time.monotonic()
+        idf, mats = build_channel(frame, bounds, name, spec, ctx.plan["dims"], ctx.workers)
+        built = time.monotonic() - t0
+        ks = sorted(set(spec.get("ks", [spec["top_k"]])))
+        hits = search_channel(queries[spec["view"]].to_list(), idf, mats, bounds, name, spec, ctx.plan["dims"],
+                              ctx.workers, top_k=max(ks))
+        searched = time.monotonic() - t0 - built
+        del mats
+        gc.collect()
+        hits = hits.with_columns((pl.col("t") >= src3).alias("s3"))
+        hits = hits.with_columns(pl.col("score").rank("ordinal", descending=True).over("q", "s3").alias("k"))
+        for k in ks:
+            sel = hits.filter(pl.col("k") <= k)
+            cand = pl.DataFrame({"s1": q_rows[sel["q"].to_numpy()], "target_id": ids.gather(sel["t"])}).with_columns(
+                pl.col("s1").cast(pl.UInt32)).unique()
+            cands[f"{name}@{k}"] = cand
+            results[f"{name}@{k}"] = {**evaluate(cand), "build_s": round(built, 1), "search_s": round(searched, 1)}
+            log(f"bench {name}@{k}: {results[f'{name}@{k}']}")
+    for union in task.get("unions", []):
+        cand = pl.concat([cands[x] for x in union]).unique()
+        results[" + ".join(union)] = evaluate(cand)
+        log(f"bench union {union}: {results[' + '.join(union)]}")
+    store.put_json(f"bench/{task['id']}.json", {"results": results, "queries": len(rows), "truth": len(truth),
+                                                 "seconds": time.monotonic() - started})
+    return {"queries": len(rows), "variants": len(results)}
 
 
-def uploader(store, name, logfile, state, stop):
+RUNNERS = {"feat": run_feat, "train": run_train, "score": run_score, "final": run_final, "bench": run_bench}
+
+
+def uploader(holder, name, logfile, state, stop):
     while not stop.wait(60):
         try:
+            store = holder["store"]
             store.upload(logfile, f"logs/{name}.log")
             total, avail = mem_gb()
             store.put_json(f"logs/{name}.json", {**state, "mem_total_gb": total, "mem_avail_gb": avail,
@@ -616,20 +758,9 @@ def uploader(store, name, logfile, state, stop):
             log(f"log upload warning: {type(error).__name__}")
 
 
-def worker(args):
-    store = Store(args.bucket, args.prefix, args.root)
-    args.work.mkdir(parents=True, exist_ok=True)
-    plan = store.get_json("plan.json")
-    ctx = Context(args.data, args.work, args.workers, plan)
-    total_mem = args.mem_gb or mem_gb()[0]
-    state = {"worker": args.name, "task": None, "mem_total_gb": total_mem, "host": platform.node()}
-    stop = threading.Event()
-    if args.logfile:
-        threading.Thread(target=uploader, args=(store, args.name, args.logfile, state, stop), daemon=True).start()
-    tasks, loaded_at, idle_since = {}, None, None
-    log(f"worker {args.name} mem={total_mem:.1f}GB workers={args.workers} plan={plan['plan_sha'][:12]}")
-    # A task claimed by this worker name without a result was interrupted (restart/OOM).
-    # Release it for other workers and never retake it here.
+def release_interrupted(store, name):
+    """A task claimed by this worker name without a result was interrupted (restart/OOM).
+    Release it for other workers and never retake it here."""
     finished = {x[:-5] for x in store.list("done")} | {x[:-5] for x in store.list("failed")}
     for claim in store.list("claims"):
         if claim not in finished:
@@ -637,36 +768,92 @@ def worker(args):
                 owner = json.loads(store.get_bytes(f"claims/{claim}")).get("worker")
             except Exception:
                 continue
-            if owner == args.name:
-                store.put_json(f"attempts/{claim}--{args.name}.json", {"released": True})
+            if owner == name:
+                store.put_json(f"attempts/{claim}--{name}.json", {"released": True})
                 store.delete(f"claims/{claim}")
                 log(f"released interrupted task {claim}")
+
+
+class Queue:
+    """One task queue (S3 prefix) with its immutable plan and cached task definitions."""
+
+    def __init__(self, args, prefix):
+        self.prefix = prefix
+        self.store = Store(args.bucket, prefix, args.root)
+        self.plan = self.store.get_json("plan.json")
+        self.tasks, self.loaded_at, self.finished = {}, None, False
+        release_interrupted(self.store, args.name)
+
+    def ready(self, name, total_mem, current):
+        if self.loaded_at is None or time.monotonic() - self.loaded_at > 300:
+            for item in self.store.list("tasks"):
+                if item.endswith(".json") and item[:-5] not in self.tasks:
+                    self.tasks[item[:-5]] = self.store.get_json(f"tasks/{item}")
+            self.loaded_at = time.monotonic()
+        done = {x[:-5] for x in self.store.list("done")}
+        claimed = set(self.store.list("claims"))
+        mine = {x[:-5].rsplit("--", 1)[0] for x in self.store.list("attempts") if x[:-5].endswith("--" + name)}
+        self.finished = bool(self.tasks) and len(done) >= len(self.tasks)
+        ready = [t for t in self.tasks.values() if t["id"] not in claimed and t["id"] not in mine
+                 and t.get("min_mem_gb", 0) <= total_mem and all(r in done for r in t.get("requires", []))]
+        ready.sort(key=lambda t: (t["priority"], (self.prefix, t.get("split"), t.get("country")) != current, t["id"]))
+        return ready
+
+
+def worker(args):
+    """Serve the queues listed (in priority order) by control/queues of the home prefix."""
+    home = Store(args.bucket, args.prefix, args.root)
+    holder = {"store": home}
+    args.work.mkdir(parents=True, exist_ok=True)
+    ctx = Context(args.data, args.work, args.workers, None, prefix=None)
+    total_mem = args.mem_gb or mem_gb()[0]
+    state = {"worker": args.name, "task": None, "mem_total_gb": total_mem, "host": platform.node(), "queues": []}
+    stop = threading.Event()
+    if args.logfile:
+        threading.Thread(target=uploader, args=(holder, args.name, args.logfile, state, stop), daemon=True).start()
+    queues, idle_since = {}, None
+    code_etag, code_checked, exit_code = home.etag("code/code.tar.gz"), time.monotonic(), 0
+    log(f"worker {args.name} mem={total_mem:.1f}GB workers={args.workers} home={args.prefix}")
     while True:
-        if store.exists("control/stop") or store.exists(f"control/stop-{args.name}"):
+        if home.exists("control/stop") or home.exists(f"control/stop-{args.name}"):
             log("stop flag found")
             break
-        if loaded_at is None or time.monotonic() - loaded_at > 300:
-            for name in store.list("tasks"):
-                if name.endswith(".json") and name[:-5] not in tasks:
-                    tasks[name[:-5]] = store.get_json(f"tasks/{name}")
-            loaded_at = time.monotonic()
-        done = {x[:-5] for x in store.list("done")}
-        claimed = set(store.list("claims"))
-        mine = {x[:-5].rsplit("--", 1)[0] for x in store.list("attempts") if x[:-5].endswith("--" + args.name)}
-        if len(done) >= len(tasks) and tasks:
-            log("all tasks done")
-            break
-        ready = [t for t in tasks.values() if t["id"] not in claimed and t["id"] not in mine
-                 and t.get("min_mem_gb", 0) <= total_mem and all(r in done for r in t.get("requires", []))]
-        current = ctx._catalog.key if ctx._catalog else None
-        ready.sort(key=lambda t: (t["priority"], (t.get("split"), t.get("country")) != current, t["id"]))
+        if args.reload and code_etag and time.monotonic() - code_checked > 30:
+            code_checked = time.monotonic()
+            if home.etag("code/code.tar.gz") not in (None, code_etag):
+                log("new code published; exiting for reload")
+                exit_code = 75
+                break
+        order = [home.prefix]
+        if home.exists("control/queues"):
+            try:
+                order = json.loads(home.get_bytes("control/queues")) or order
+            except ValueError:
+                log("unreadable control/queues; using home queue")
+        state["queues"] = order
         chosen = None
-        for task in ready:
-            if store.create_exclusive(f"claims/{task['id']}", json.dumps(
-                    {"worker": args.name, "at": datetime.datetime.now(datetime.timezone.utc).isoformat()}).encode()):
-                chosen = task
+        for prefix in order:
+            if prefix not in queues:
+                try:
+                    queues[prefix] = Queue(args, prefix)
+                    log(f"serving queue {prefix} plan={queues[prefix].plan['plan_sha'][:12]}")
+                except Exception as error:
+                    log(f"queue {prefix} unavailable: {error!r}")
+                    continue
+            queue = queues[prefix]
+            current = getattr(ctx._catalog, "queue_key", None)
+            for task in queue.ready(args.name, total_mem, current):
+                if queue.store.create_exclusive(f"claims/{task['id']}", json.dumps(
+                        {"worker": args.name, "at": datetime.datetime.now(datetime.timezone.utc).isoformat()}).encode()):
+                    chosen = (queue, task)
+                    break
+            if chosen:
                 break
         if chosen is None:
+            active = [queues[p] for p in order if p in queues]
+            if not args.stay and active and all(q.finished for q in active):
+                log("all tasks done")
+                break
             idle_since = idle_since or time.monotonic()
             if args.idle_exit and time.monotonic() - idle_since > args.idle_exit:
                 log("idle limit reached")
@@ -674,25 +861,29 @@ def worker(args):
             time.sleep(20)
             continue
         idle_since = None
-        state["task"] = chosen["id"]
-        log(f"START {chosen['id']}")
+        queue, task = chosen
+        ctx.use(queue.prefix, queue.plan)
+        store = queue.store
+        state["task"] = f"{queue.prefix}:{task['id']}"
+        log(f"START {queue.prefix}:{task['id']}")
         started = time.monotonic()
         try:
-            if chosen["kind"] in ("train", "final"):
+            if task["kind"] in ("train", "final", "bench"):
                 ctx.drop_catalog()
-            info = RUNNERS[chosen["kind"]](chosen, store, ctx)
-            store.put_json(f"done/{chosen['id']}.json", {"worker": args.name, "seconds": time.monotonic() - started,
-                                                          "info": info})
-            log(f"DONE {chosen['id']} in {time.monotonic()-started:.0f}s {json.dumps(info, default=str)[:600]}")
+            info = RUNNERS[task["kind"]](task, store, ctx)
+            store.put_json(f"done/{task['id']}.json", {"worker": args.name, "seconds": time.monotonic() - started,
+                                                        "info": info})
+            log(f"DONE {task['id']} in {time.monotonic()-started:.0f}s {json.dumps(info, default=str)[:600]}")
         except Exception as error:
-            store.put_json(f"failed/{chosen['id']}.json", {"worker": args.name, "error": repr(error),
-                                                            "traceback": traceback.format_exc()})
-            log(f"FAILED {chosen['id']}: {error!r}\n{traceback.format_exc()}")
+            store.put_json(f"failed/{task['id']}.json", {"worker": args.name, "error": repr(error),
+                                                          "traceback": traceback.format_exc()})
+            log(f"FAILED {task['id']}: {error!r}\n{traceback.format_exc()}")
             ctx.drop_catalog()
         state["task"] = None
     stop.set()
     if args.logfile:
-        store.upload(args.logfile, f"logs/{args.name}.log")
+        home.upload(args.logfile, f"logs/{args.name}.log")
+    return exit_code
 
 
 # ---------------------------------------------------------------- plan
@@ -706,6 +897,10 @@ def plan(args):
     settings["norm"] = args.norm
     settings["anchors"] = bool(args.anchors)
     settings["max_df"] = {"char": args.max_df_char, "word": args.max_df_word}
+    if args.channels_json:
+        settings["channels"] = json.loads(Path(args.channels_json).read_text())
+    if args.memory_scale is not None:
+        settings["memory_scale"] = args.memory_scale
     train = pl.read_csv(Path(args.data) / "train" / "train_source1.tsv", separator="\t", quote_char=None,
                         columns=["entity_id", "country"], infer_schema=False).with_row_index("row")
     test = pl.read_csv(Path(args.data) / "test" / "test_source1.tsv", separator="\t", quote_char=None,
@@ -737,7 +932,7 @@ def plan(args):
                 catalog_rows[(split_name, country)] = catalog_rows.get((split_name, country), 0) + count
     for task in tasks:
         size = catalog_rows[(task["split"], task["country"])] / 1e6
-        task["min_mem_gb"] = round(min(60.0, 5 + 2.2 * size), 1)
+        task["min_mem_gb"] = round(min(60.0, 4 + settings.get("memory_scale", 1.4) * size), 1)
         task["catalog_rows"] = catalog_rows[(task["split"], task["country"])]
     train_inputs = [t["id"] for t in tasks if t["split"] == "train"]
     tasks.append({"id": "train", "kind": "train", "inputs": train_inputs, "requires": train_inputs,
@@ -772,8 +967,12 @@ def main():
     parser.add_argument("--logfile", type=Path)
     parser.add_argument("--idle-exit", type=int, default=0)
     parser.add_argument("--mem-gb", type=float, help="override detected memory (tests)")
+    parser.add_argument("--stay", action="store_true", help="keep polling after the queue is finished")
+    parser.add_argument("--reload", action="store_true", help="exit with 75 between tasks when code.tar.gz changes")
     parser.add_argument("--norm", choices=["v4", "v5"], default="v4", help="text normaliser (plan)")
     parser.add_argument("--anchors", action="store_true", help="add anchor-support features (plan)")
+    parser.add_argument("--channels-json", type=Path, help="channel specs added to/overriding the v4 four (plan)")
+    parser.add_argument("--memory-scale", type=float, help="GB per million catalog rows for feat tasks (plan)")
     parser.add_argument("--max-df-char", type=float, default=0.03)
     parser.add_argument("--max-df-word", type=float, default=0.05)
     for key in ("fit", "stop", "tune", "shard", "top_k"):
@@ -784,7 +983,7 @@ def main():
     if args.command == "plan":
         plan(args)
     else:
-        worker(args)
+        sys.exit(worker(args))
 
 
 if __name__ == "__main__":

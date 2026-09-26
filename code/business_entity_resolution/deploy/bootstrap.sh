@@ -10,6 +10,9 @@ BASE=/home/ec2-user/SageMaker/er
 mkdir -p "$BASE" && cd "$BASE"
 exec >> "$BASE/bootstrap.log" 2>&1
 NAME=$(python3 -c "import json;print(json.load(open('/opt/ml/metadata/resource-metadata.json'))['ResourceName'])" 2>/dev/null || hostname)
+# Optional per-instance queue: s3://$BUCKET/$PREFIX/control/prefix-$NAME holds another prefix.
+OVERRIDE=$(aws s3 cp "s3://$BUCKET/$PREFIX/control/prefix-$NAME" - --region $REGION 2>/dev/null | tr -d '[:space:]')
+[ -n "$OVERRIDE" ] && PREFIX=$OVERRIDE
 up() { aws s3 cp "$BASE/bootstrap.log" "s3://$BUCKET/$PREFIX/logs/$NAME.bootstrap.log" --sse AES256 --only-show-errors --region $REGION || true; }
 trap up EXIT
 echo "$(date -u) bootstrap $NAME nproc=$(nproc) mem=$(free -g | awk '/Mem:/{print $2}')G"
@@ -31,15 +34,25 @@ if [ ! -f data/student_resource/dataset/test/test_source3.tsv ]; then
 fi
 echo "$(date -u) data ready: $(ls data/student_resource/dataset/*/ | tr '\n' ' ')"
 up
-cd code
 export ER_WORKERS=$(nproc) POLARS_MAX_THREADS=$(nproc) OMP_NUM_THREADS=$(nproc) PYTHONUNBUFFERED=1 AWS_REGION=$REGION
-for attempt in 1 2 3 4; do
+failures=0
+while [ $failures -lt 4 ]; do
+  cd "$BASE/code"
   "$BASE/venv/bin/python" -m src.v5_dist worker --data "$BASE/data/student_resource/dataset" \
-    --bucket "$BUCKET" --prefix "$PREFIX" --work "$BASE/work" --name "$NAME" \
+    --bucket "$BUCKET" --prefix "$PREFIX" --work "$BASE/work" --name "$NAME" --stay --reload \
     --logfile "$BASE/worker.log" >> "$BASE/worker.log" 2>&1
   status=$?
-  echo "$(date -u) worker exited $status (attempt $attempt)"
+  cd "$BASE"
+  echo "$(date -u) worker exited $status (failures $failures)"
+  if [ $status -eq 75 ]; then
+    # new code published: refresh and restart the worker without rebooting the instance
+    aws s3 cp "s3://$BUCKET/$PREFIX/code/code.tar.gz" code.tar.gz --only-show-errors --region $REGION \
+      && rm -rf code && mkdir code && tar xzf code.tar.gz -C code && echo "$(date -u) code reloaded"
+    up
+    continue
+  fi
   [ $status -eq 0 ] && break
+  failures=$((failures + 1))
   sleep 15
 done
 aws s3 cp "$BASE/worker.log" "s3://$BUCKET/$PREFIX/logs/$NAME.log" --sse AES256 --only-show-errors --region $REGION || true

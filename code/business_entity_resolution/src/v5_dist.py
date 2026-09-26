@@ -493,7 +493,9 @@ def run_train(task, store, ctx):
     log(f"truth pairs={len(truth):,} excluded held-out targets={len(excluded):,}")
     fit_s, stop_s, tune_s = (pl.Series(x.astype(np.uint32)) for x in (fit, stop, tune))
     positive = truth.with_columns(pl.lit(1, pl.Int8).alias("y"))
-    xf, yf, xs, ys, tune_parts = [], [], [], [], []
+    xf, yf, wf, xs, ys, tune_parts = [], [], [], [], [], []
+    neg_keep, hard_rank = plan.get("neg_keep"), plan.get("hard_rank", 40)
+    rng = np.random.default_rng(20260927)
     for shard in task["inputs"]:
         path = store.download(f"feat/{shard}.parquet", ctx.work / "in" / f"{shard}.parquet")
         frame = pl.read_parquet(path)
@@ -503,9 +505,17 @@ def run_train(task, store, ctx):
         if part.filter(pl.col("y") == 1).join(excluded, on="target_id", how="semi").height:
             raise ValueError("A labelled fit target is owned by a held-out query")
         part = part.join(excluded, on="target_id", how="anti")
+        if len(part) and neg_keep:
+            # Keep positives and hard negatives (top `hard_rank` by best channel score);
+            # sample easy negatives and reweight them so the class balance is preserved.
+            easy = ((part["y"] == 0) & (part["bscore_rank"] > hard_rank)).to_numpy()
+            keep = ~easy | (rng.random(len(part)) < neg_keep)
+            part = part.filter(pl.Series(keep)).with_columns(
+                pl.Series("w", np.where(easy[keep], 1.0 / neg_keep, 1.0).astype(np.float32)))
         if len(part):
             xf.append(part.select(names).to_numpy().astype(np.float32, copy=False))
             yf.append(part["y"].to_numpy())
+            wf.append(part["w"].to_numpy() if "w" in part.columns else np.ones(len(part), dtype=np.float32))
         part = frame.filter(pl.col("s1").is_in(stop_s.implode()))
         if len(part):
             xs.append(part.select(names).to_numpy().astype(np.float32, copy=False))
@@ -519,7 +529,8 @@ def run_train(task, store, ctx):
     y_fit = np.concatenate(yf)
     params = dict(LGB_PARAMS, learning_rate=plan["learning_rate"], num_threads=ctx.workers,
                   deterministic=True, force_col_wise=True)
-    dtrain = lgb.Dataset(xf, label=y_fit, feature_name=names, params=params, free_raw_data=True)
+    dtrain = lgb.Dataset(xf, label=y_fit, weight=np.concatenate(wf), feature_name=names, params=params,
+                         free_raw_data=True)
     dstop = lgb.Dataset(np.concatenate(xs), label=np.concatenate(ys), reference=dtrain, params=params)
     dtrain.construct()
     del xf, xs
@@ -825,11 +836,13 @@ def worker(args):
                 exit_code = 75
                 break
         order = [home.prefix]
-        if home.exists("control/queues"):
-            try:
-                order = json.loads(home.get_bytes("control/queues")) or order
-            except ValueError:
-                log("unreadable control/queues; using home queue")
+        for marker in (f"control/queues-{args.name}", "control/queues"):
+            if home.exists(marker):
+                try:
+                    order = json.loads(home.get_bytes(marker)) or order
+                except ValueError:
+                    log(f"unreadable {marker}; using home queue")
+                break
         state["queues"] = order
         chosen = None
         for prefix in order:
@@ -901,6 +914,8 @@ def plan(args):
         settings["channels"] = json.loads(Path(args.channels_json).read_text())
     if args.memory_scale is not None:
         settings["memory_scale"] = args.memory_scale
+    if args.neg_keep is not None:
+        settings["neg_keep"] = args.neg_keep
     train = pl.read_csv(Path(args.data) / "train" / "train_source1.tsv", separator="\t", quote_char=None,
                         columns=["entity_id", "country"], infer_schema=False).with_row_index("row")
     test = pl.read_csv(Path(args.data) / "test" / "test_source1.tsv", separator="\t", quote_char=None,
@@ -973,6 +988,7 @@ def main():
     parser.add_argument("--anchors", action="store_true", help="add anchor-support features (plan)")
     parser.add_argument("--channels-json", type=Path, help="channel specs added to/overriding the v4 four (plan)")
     parser.add_argument("--memory-scale", type=float, help="GB per million catalog rows for feat tasks (plan)")
+    parser.add_argument("--neg-keep", type=float, help="fraction of easy fit negatives kept, reweighted (plan)")
     parser.add_argument("--max-df-char", type=float, default=0.03)
     parser.add_argument("--max-df-word", type=float, default=0.05)
     for key in ("fit", "stop", "tune", "shard", "top_k"):

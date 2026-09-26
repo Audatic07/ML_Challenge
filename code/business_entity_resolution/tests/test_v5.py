@@ -92,9 +92,15 @@ def test_blocked_search_matches_unblocked(tmp_path):
         assert scores(a).equals(scores(b)), channel
 
 
-@pytest.mark.parametrize("variant", [[], ["--norm", "v5", "--anchors"]])
+@pytest.mark.parametrize("variant", [[], ["--norm", "v5", "--anchors", "--channels-json", "CHANNELS", "--neg-keep", "0.5"]])
 def test_distributed_pipeline_end_to_end(tmp_path, variant):
     rng = random.Random(7)
+    channels = tmp_path / "channels.json"
+    channels.write_text(json.dumps({
+        "address_char": {"top_k": 30}, "name_fold": {"top_k": 10},
+        "combo": {"view": "combo", "analyzer": "char_wb", "ngram": [3, 4], "max_df": 0.3, "top_k": 30},
+        "combo_word": {"view": "combo", "analyzer": "word", "ngram": [1, 2], "max_df": 0.3, "top_k": 30}}))
+    variant = [str(channels) if v == "CHANNELS" else v for v in variant]
     data = tmp_path / "student_resource" / "dataset"
     make_split(data, "train", ["US", "India"], 400, rng)
     make_split(data, "test", ["US", "India", "France"], 150, rng)

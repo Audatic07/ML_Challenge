@@ -103,6 +103,7 @@ def main() -> None:
     stats_va = report_blocking("val", va_rows, va, truth)
     truth_va = truth.filter(pl.col("s1").is_in(pl.Series(va_rows)))
     countries = s1.select(pl.col("row").alias("s1"), "country")
+    excluded_target_count = len(excluded_targets)
     del s1, tg, truth, excluded_targets
 
     t = time.time()
@@ -145,7 +146,7 @@ def main() -> None:
         "retrieval_version": getattr(config, "RETRIEVAL_VERSION", "2"),
         "retrieval_rank": getattr(config, "RETRIEVAL_RANK", "weight"),
         "train_sample": TRAIN_SAMPLE, "val_sample": VAL_SAMPLE, "seed": SEED,
-        "split": manifest, "excluded_held_out_targets": len(excluded_targets),
+        "split": manifest, "excluded_held_out_targets": excluded_target_count,
         "blocking_train": stats_tr, "blocking_val": stats_va,
         "feature_gain": {f: float(g) for f, g in zip(FEATURES, gain)},
         "seconds": time.time() - t0,

@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 3,
+  "epoch": 4,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-26T21:22:14Z",
+  "updated_at": "2026-09-26T22:21:31Z",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -20,6 +20,11 @@
     {
       "session_id": "astra-20260927-0158",
       "branch": "codex/retrieval-v4-astra-20260927",
+      "status": "idle; SageMaker run handed to claude-20260927-0340 by user direction"
+    },
+    {
+      "session_id": "claude-20260927-0340",
+      "branch": "codex/v5-dist-claude-20260927",
       "status": "active"
     }
   ],
@@ -36,6 +41,23 @@
       "created_at": "2026-09-27T01:18:56.518408+05:30",
       "next_checkpoint": "branch review, tested retrieval runner, compute credentials",
       "deliverable": "Review both branches; measured retrieval repair, guarded training launch and Luna handoff"
+    },
+    {
+      "task_id": "DIST-V5",
+      "session_id": "claude-20260927-0340",
+      "branch": "codex/v5-dist-claude-20260927",
+      "paths": [
+        "code/business_entity_resolution/src/v5_dist.py",
+        "code/business_entity_resolution/src/v5_vec.py",
+        "code/business_entity_resolution/deploy/",
+        "code/business_entity_resolution/tests/test_v5.py",
+        "code/business_entity_resolution/requirements-v5.txt",
+        "coordination/evidence/v5-dist/"
+      ],
+      "base_main_sha": "e1502f6",
+      "created_at": "2026-09-26T22:21:31Z",
+      "next_checkpoint": "workers running; train task complete with tune macro F0.5/oracle U; test scoring",
+      "deliverable": "Distributed v5 retrieval+features+LightGBM on SageMaker notebook instances; tune metrics; test TSVs"
     }
   ],
   "integration_claim": null,
@@ -211,10 +233,47 @@
       "studio_space": "default-22054d3c-d14b-497a-953a-81e5d65fd50b",
       "input_s3_uri": "s3://amazon-sagemaker-580857071542-ap-south-1-dn0trrxacr3ddt/shared/entity-v4-job-20260927/input/student_resource.zip",
       "output_s3_prefix": "s3://amazon-sagemaker-580857071542-ap-south-1-dn0trrxacr3ddt/shared/entity-res-v4-20260927-astra/"
+    },
+    {
+      "job_id": "er-v5-20260927-claude",
+      "account_alias": "authorized-sagemaker-ap-south-1",
+      "owner_session": "claude-20260927-0340",
+      "service": "SageMaker notebook instances + lifecycle config (S3 task queue)",
+      "region": "ap-south-1",
+      "instances": [
+        "ml.r7i.2xlarge",
+        "ml.r6i.2xlarge",
+        "ml.r6id.2xlarge",
+        "ml.m5.2xlarge",
+        "ml.c7i.2xlarge",
+        "ml.c6i.2xlarge",
+        "ml.c5.2xlarge",
+        "ml.c5d.2xlarge",
+        "6x ml.t3.2xlarge"
+      ],
+      "maximum_runtime_hours": 4,
+      "estimated_rate_usd_per_hour": 7.5,
+      "authorized_job_spend_cap_usd": 40,
+      "overall_user_cap_usd": 100,
+      "data": "provided dataset only; existing private SageMaker bucket (SSL-only policy, SSE-S3)",
+      "s3_prefix": "s3://amazon-sagemaker-580857071542-ap-south-1-dn0trrxacr3ddt/shared/er-v5-20260927/",
+      "training": "fit=400000, stop=10000 (perm[300000:310000]), tune=100000 (perm[200000:300000]); audit unopened; full train and test catalogs",
+      "status": "reserved-not-launched",
+      "created_at": "2026-09-26T22:21:31Z"
     }
   ],
   "submission_history": [],
-  "handoffs": [],
+  "handoffs": [
+    {
+      "from": "astra-20260927-0158",
+      "to": "claude-20260927-0340",
+      "at": "2026-09-26T22:21:31Z",
+      "task": "RETRIEVAL-V4 SageMaker training",
+      "basis": "User directed Claude to take over the SageMaker training run.",
+      "finding": "entity-res-v4-20260927-astra runs fit=400000/stop=10000/tune=100000 because train_source1 has 2,206,821 rows (run_manifest query_count); the 226,881 figure was a misread. One 8-vCPU/32GB app needs ~2.2h for retrieval and is expected to exhaust memory at the feature/LightGBM stage.",
+      "action": "Left running (bounded by its 6h watchdog); replaced by the distributed DIST-V5 job below."
+    }
+  ],
   "budget": {
     "currency": "USD",
     "assumed_known_accounts": 3,

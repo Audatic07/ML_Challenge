@@ -91,3 +91,18 @@ def test_v4_samples_are_nested_disjoint_and_keep_legacy_validation():
     assert not set(b[1]) & set(b[4])
     assert not set(b[2]) & set(b[3])
     assert set(a[3]) == set(np.random.default_rng(42).permutation(600000)[200000:205000])
+
+
+def test_v4_uses_full_available_population_when_training_file_is_small():
+    from src.v4_train import partitions
+    n = 226881
+    split, fit, stop, tune, excluded = partitions(n, 400000, 10000, 100000)
+    assert len(tune) == n // 10
+    assert len(split.audit) == int(n * 0.10)
+    assert len(fit) == split.validation_start - len(stop)
+    assert len(fit) > 170000
+    assert len(stop) <= 10000
+    assert not set(fit) & set(stop)
+    assert not set(fit) & set(tune)
+    assert not set(fit) & set(split.audit)
+    assert set(split.audit) <= set(excluded)

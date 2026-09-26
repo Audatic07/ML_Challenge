@@ -70,8 +70,8 @@ def split_manifest(split: QuerySplit, query_ids: Iterable[str]) -> dict:
     if count != split.n_rows:
         raise ValueError("query ID count does not match split population")
     manifest = {
-        "version": "v1-fixed-validation-1",
-        "policy": "seeded file-order permutation; fixed validation interval; final permutation tail audit reserve",
+        "version": "v2-adaptive-validation-locked-audit",
+        "policy": "seeded file-order permutation; canonical validation interval when available, otherwise adaptive 10% validation; final 10% audit reserve",
         "seed": split.seed, "query_count": split.n_rows,
         "source1_id_order_sha256": source_hash.hexdigest(),
         "validation_start": split.validation_start,

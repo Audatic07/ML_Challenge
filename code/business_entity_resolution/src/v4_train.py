@@ -25,17 +25,32 @@ from .v4_features import build_features, FEATURES
 
 
 def partitions(n, fit_size, stop_size, tune_size):
-    split = make_split(n, min(fit_size + 10000, n - 100000 - n // 10), tune_size)
-    perm = np.random.default_rng(42).permutation(n)
-    stop_reserve = perm[300000:310000].astype(np.uint32)
-    if len(stop_reserve) != 10000 or stop_size > 10000:
-        raise ValueError("Need a full fixed early-stopping reserve; stop <= 10000")
-    fit = split.train[~np.isin(split.train, stop_reserve)][:fit_size]
-    # make_split returns sorted rows. Use original permutation ordering to keep
-    # nested fit samples when extending beyond the original 200k fit population.
-    excluded = np.concatenate([split.held_out, stop_reserve])
-    fit = np.sort(perm[~np.isin(perm, excluded)][:fit_size]).astype(np.uint32)
-    stop = np.sort(stop_reserve[:stop_size])
+    if n >= 310000:
+        split = make_split(n, min(fit_size + 10000, n - 100000 - n // 10), tune_size)
+        perm = np.random.default_rng(42).permutation(n)
+        stop_reserve = perm[300000:310000].astype(np.uint32)
+        if len(stop_reserve) != 10000 or stop_size > 10000:
+            raise ValueError("Need a full fixed early-stopping reserve; stop <= 10000")
+        excluded = np.concatenate([split.held_out, stop_reserve])
+        fit = np.sort(perm[~np.isin(perm, excluded)][:fit_size]).astype(np.uint32)
+        stop = np.sort(stop_reserve[:stop_size])
+    else:
+        # Preserve a locked 10% audit and use 10% for full-catalog tuning,
+        # then spend the remaining population on fit/early stop.
+        audit_size = int(n * 0.10)
+        tune_size = min(tune_size, max(1, n // 10))
+        validation_start = n - audit_size - tune_size
+        if validation_start <= 0:
+            raise ValueError("Dataset is too small for separate tune and audit partitions")
+        split = make_split(n, validation_start, tune_size,
+                           validation_start=validation_start, validation_size=tune_size)
+        max_stop = min(10000, max(1, validation_start // 20))
+        stop_size = min(stop_size, max_stop)
+        stop_reserve = split.train[:max_stop]
+        fit_size = min(fit_size, len(split.train) - max_stop)
+        fit = split.train[max_stop:max_stop + fit_size]
+        stop = stop_reserve[:stop_size]
+        excluded = np.concatenate([split.held_out, stop_reserve])
     return split, fit, stop, split.validation, np.unique(excluded)
 
 
@@ -159,7 +174,8 @@ def main():
            'selected_rows_sha':digest(rows.tolist()), 'fit_rows_sha':digest(fit.tolist()),
            'stop_rows_sha':digest(stop.tolist()), 'tune_rows_sha':digest(tune.tolist()),
            'fit_queries':len(fit), 'stop_queries':len(stop), 'tune_queries':len(tune),
-           'early_stop_reserve':'permutation[300000:310000]',
+           'early_stop_reserve':('permutation[300000:310000]' if len(ids) >= 310000
+                                 else 'fixed prefix of fit pool; selected row hashes pinned'),
            'repeated_fingerprint_grouping':'not audited; no duplicate S1 ID; shared-target check enforced',
            'data_source1_sha':sha256(args.data/'train'/'train_source1.tsv'),
            'ground_truth_sha':sha256(args.data/'train'/'train_ground_truth.tsv'),

@@ -9,7 +9,7 @@ import time
 
 import polars as pl
 
-from .config import DATA_DIR, WORK_DIR
+from .config import CACHE_DIR, DATA_DIR, WORK_DIR
 from .text_norm import normalise
 
 COLUMNS = ["entity_id", "business_name", "business_address", "country"]
@@ -37,7 +37,8 @@ def load(split: str) -> tuple[pl.DataFrame, pl.DataFrame]:
     `row` is the position in each frame and is what every other module uses.
     """
     WORK_DIR.mkdir(parents=True, exist_ok=True)
-    f1, ft = WORK_DIR / f"{split}_s1.parquet", WORK_DIR / f"{split}_tg.parquet"
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    f1, ft = CACHE_DIR / f"{split}_s1.parquet", CACHE_DIR / f"{split}_tg.parquet"
     if f1.exists() and ft.exists():
         return pl.read_parquet(f1), pl.read_parquet(ft)
     out = []

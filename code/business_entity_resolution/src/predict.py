@@ -15,13 +15,47 @@ import lightgbm as lgb
 import numpy as np
 import polars as pl
 
+from . import config
 from .blocking import Blocker
-from .config import CHUNK, OUT_DIR, WORK_DIR, WORKERS
+from .config import CHUNK, KEY_TYPES, OUT_DIR, TOP_K, WORK_DIR, WORKERS
 from .features import FEATURES, build, matrix
 from .metric import decide
 from .prepare import load
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Exact settings of the supplied, tested incumbent. Missing version metadata is
+# compatible only with this original policy and feature schema.
+LEGACY_V1_KEYS = {"A": [3, 200], "B": [3, 200], "C": [2, 200],
+                  "D": [2, 100], "E": [1, 50], "F": [2, 50], "G": [2, 100]}
+LEGACY_V1_FEATURES = (
+    "n_ratio n_partial n_tsort n_tset c_ratio c_tset c_jw sk_ratio sk_tset "
+    "cc_ratio cc_partial a_ratio a_partial a_tsort a_tset at_ratio at_tset "
+    "n_exact c_exact pc_eq hs_eq cty_eq n_len1 n_len2 a_len1 a_len2 ntok_r "
+    "src bscore kA kB kC kD kE kF kG n_cand n_tset_gap a_tset_gap cc_ratio_gap "
+    "at_tset_gap bscore_gap n_tset_rank a_tset_rank cc_ratio_rank at_tset_rank bscore_rank"
+).split()
+
+
+def validate_retrieval_config(meta: dict) -> None:
+    """Reject a saved model whose candidate policy differs from active settings."""
+    expected_keys = {key: list(settings) for key, settings in KEY_TYPES.items()}
+    saved_keys = {key: list(settings) for key, settings in meta.get("key_types", {}).items()}
+    if meta.get("top_k") != TOP_K or saved_keys != expected_keys:
+        raise ValueError("retrieval settings changed since training (TOP_K or KEY_TYPES): retrain first")
+    version = getattr(config, "RETRIEVAL_VERSION", "2")
+    rank = getattr(config, "RETRIEVAL_RANK", "weight")
+    if "retrieval_version" not in meta:
+        legacy_compatible = (
+            getattr(config, "BLOCKING_PROFILE", "v1") == "v1"
+            and rank == "weight" and meta.get("retrieval_rank", "weight") == "weight"
+            and TOP_K == 30 and expected_keys == LEGACY_V1_KEYS
+            and FEATURES == LEGACY_V1_FEATURES and meta.get("features") == LEGACY_V1_FEATURES
+        )
+        if not legacy_compatible:
+            raise ValueError("missing retrieval version is supported only for original v1/weight: retrain first")
+    elif meta["retrieval_version"] != version or meta.get("retrieval_rank") != rank:
+        raise ValueError("retrieval version or ranking changed since training: retrain first")
 
 
 def write_lists(path, s1: pl.DataFrame, tg: pl.DataFrame, pairs: pl.DataFrame, header: str) -> None:
@@ -39,6 +73,7 @@ def main() -> None:
     meta = json.loads((WORK_DIR / "meta.json").read_text())
     if meta["features"] != FEATURES:
         raise SystemExit("feature list changed since training: retrain first")
+    validate_retrieval_config(meta)
     model = lgb.Booster(model_file=str(WORK_DIR / "model.txt"))
     s1, tg = load("test")
     t = time.time()

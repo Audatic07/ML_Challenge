@@ -1,0 +1,10 @@
+{
+  "session_id": "v1-check-20260926-1805",
+  "mode": "local_only_user_will_commit",
+  "remote_claim": "unavailable: this workspace has no remote",
+  "primary_paths": ["code/business_entity_resolution/src/blocking.py", "code/business_entity_resolution/src/config.py", "code/business_entity_resolution/src/__init__.py", "code/business_entity_resolution/src/diagnose_retrieval.py", "code/business_entity_resolution/tests/test_blocking.py", "code/business_entity_resolution/README.md"],
+  "delegated_paths": ["code/business_entity_resolution/src/train.py", "code/business_entity_resolution/src/predict.py", "code/business_entity_resolution/src/splits.py", "code/business_entity_resolution/tests/test_splits.py", "code/business_entity_resolution/tests/test_config_guard.py"],
+  "artifacts": "artifacts/v1-review-20260926-1805",
+  "baseline_model": "data/er_work",
+  "next_action": "Measure retrieval changes on a fixed development subset against all training targets, preserving v1 artifacts"
+}

@@ -1,0 +1,67 @@
+# python -m src.diag_misses india, run against the v2 code and cache (26 Sep 2026)
+india: 3,000 entities, 10,402 true pairs; share of pairs sharing >=1 key before caps: 0.9271
+pairs sharing each key type: A=6,076, B=20, C=5,178, D=6,180, E=6,903, F=19, G=5,411, H=7,039, I=23, J=5,032
+
+758 pairs share no key. Examples (S1 | S2/S3):
+- NAME  'rm functional corp'  |  'iriarc'
+  ADDR  'no 56 k no 105 raghavendra ngr 2nd cr bangalore s bangalore karnataka'  |  'h no 56 bangalore s bangalore karnataka'
+  pc/house /56  |  /56
+- NAME  'prudent affiliate pvt ltd'  |  'tavozeph'
+  ADDR  'plot no 143 khata no 15 ramachandrapur back side of police station jatani bhubaneswar khordha orissa'  |  'plot no 6 143 bhubaneswar khordha orissa'
+  pc/house /143  |  /6
+- NAME  'shivam systems ltd'  |  'shivm sisttms limittedd'
+  ADDR  'plot no 113 minhaj ngr phulwari khagaul patna bihar'  |  'plot no 113 varanasi patna bihar'
+  pc/house /113  |  /113
+- NAME  'lotus properties pvt ltd'  |  'lottaas prpaarttij praaibhett limittedd'
+  ADDR  '11 a bidhan pally p o goria s 24 parganas w bengal'  |  'no 11 a bidhan pally s 24 parganas pshcimbngg'
+  pc/house /11  |  /11
+- NAME  'royal tech pvt ltd'  |  'ronyl tteknolonjiij praaivett limittedd'
+  ADDR  '4th flr hari om commercial comple bihar phulwari office no 409 patna'  |  'office no 409 phulwari dak bunglow bihar'
+  pc/house /4  |  /409
+- NAME  'anand gold management pvt ltd'  |  'aannd goldd mainejmentt praaivett limittedd'
+  ADDR  'unit no 543 lodha signet 1 thane thane maharashtra'  |  'uiit no 543 thane maharashtra'
+  pc/house /543  |  /543
+- NAME  'life software pvt ltd'  |  'laaiph sonphttveyr praaivett limittedd'
+  ADDR  'h no 666 sec 38 gurgaon haryana gurgaon haryana'  |  'h no 666 sec 38 gurgaon haryana gurgaon hriyaannaa'
+  pc/house /666  |  /666
+- NAME  'star jain logistics pvt ltd'  |  'sttaar jain laajisttiks praiveett limittedd'
+  ADDR  'hyderabad telangana kushal towers khairatabad hyderabad plot no 508 1'  |  '508 1 9 hyderabad andhra pradesh hyderabad'
+  pc/house /508  |  /508
+- NAME  'laxmi black intl pvt ltd'  |  'lkssmii blaik inttrneshnl praa li'
+  ADDR  'plot no 76 d udyog vihar phase 4 sec 18 gurugram haryana gurgaon'  |  'dror no 76 d gurgaon haryana hriyaannaa'
+  pc/house /76  |  /76
+- NAME  'blue engineering pvt ltd'  |  'blu inyjiniy aarin praaibhett limittedd'
+  ADDR  '85 s n banerjee rd kolkata kolkata howrah w bengal'  |  '85 kolkata bishnupur w bengal'
+  pc/house /85  |  /85
+- NAME  'real tech pvt ltd'  |  'riyl ttek praaivett limittedd'
+  ADDR  'h no 339 pocket a 01 keshav puram delhi n w delhi'  |  'h no a 339 n a divreportingcircle n w delhi'
+  pc/house /339  |  /339
+- NAME  'city intl pvt ltd'  |  'sittii inttrneshnl praaivett limittedd'
+  ADDR  'g 23 ground flr vaishali bldg plot no 11 12 community center paschim vihar new delhi w delhi delhi'  |  'g 23 new delhi delhi'
+  pc/house /23  |  /23
+- NAME  'sai soln pvt ltd'  |  'sai pvt ltd center'
+  ADDR  '365 lig ii indira ngr ujjain madhya pradesh'  |  ''
+  pc/house /365  |  /
+- NAME  'hardware traders ltd'  |  'sri hardwaretraders'
+  ADDR  'h no 14 1 211 622 4 parwathnagar allapur hyderabad telangana'  |  'h no 14 1 211 622 4 parwathnagar allaptr hyderabad andhra pradesh'
+  pc/house /14  |  /14
+- NAME  'quantech law chambers'  |  'irihalovantage'
+  ADDR  '863 village daryapur delhi n w delhi'  |  'no b3 863 village daryapur n w delhi dillii'
+  pc/house /863  |  /3
+- NAME  'shyam infrastructure pvt ltd'  |  'shyaan iphraasttrkc praivrrrr limirrrrdd'
+  ADDR  'no 54 hilite spring dale 15 363b keezhmad velliparamba kozhikode kozhikode kl 6730 08 in kozhikode kerala'  |  'no 54 kozhikode kerala'
+  pc/house /54  |  /54
+- NAME  'yamuaksh homes pvt ltd'  |  'irivio'
+  ADDR  'coimbatore 3 athipalayam rd coimbatore tamil nadu chinnavedampatty'  |  '1 athipalayam rd coimbatore tamil nadu'
+  pc/house /3  |  /1
+- NAME  'anand foods pvt ltd'  |  'aannnnt hputts piraiveett limittett'
+  ADDR  'f no d1 amethyst silver springs karanai main rd tiruporur kanchipuram tamil nadu'  |  'tamil nadu f no d1 kanchipuram tiruporur'
+  pc/house /1  |  /1
+- NAME  'tirupati guru logistics'  |  'tirupti guru laajisttiks'
+  ADDR  'h no 1 8 2 2 trunk rd khammam municipal corporation khammam telangana'  |  'khammam telngaann khammam h no 1 8 2 2'
+  pc/house /1  |  /1
+- NAME  'hari business pvt ltd'  |  'hri bijnes praa li'
+  ADDR  'plot no 7 54 th 7 ambazari block hiltop nagpur maharashtra'  |  'plt no 7 nagpur maharashtra'
+  pc/house /7  |  /7
+(... 20 more examples in the terminal output, same two patterns: back-transliterated names and
+ one address shortened to house number + city + state; full list in the chat record)

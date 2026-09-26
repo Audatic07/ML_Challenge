@@ -1,0 +1,29 @@
+# v1 training log (key lines transcribed from the SageMaker terminal, 26 Sep 2026)
+# settings: 7 key types A-G, caps 200/200/200/100/50/50/100, TOP_K 30, CHUNK 150000, 1000 rounds
+Loading and normalising train data...
+  normalised train_source1: 2,206,821 rows in 37s
+  normalised train_source2: 5,034,616 rows in 94s
+  normalised train_source3: 5,285,603 rows in 97s
+  S1=2,206,821 S2+S3=10,320,219 true pairs=7,638,365
+  singleton share=0.056; matches per non-singleton: mean=3.67 max=11
+  S2/S3 records linked to >1 S1: 0 -> unique_assign=True
+Building blocking keys...
+  keys: S1 10,856,737, S2/S3 after cap 36,063,259 (301s)
+Train pairs (200,000 S1)...
+  chunk 1/2: 150,000 S1, 2,754,449 pairs, 32s
+  chunk 2/2: 50,000 S1, 917,327 pairs, 10s
+Validation pairs (100,000 S1)...
+  chunk 1/1: 100,000 S1, 1,845,632 pairs, 21s
+  train: 3,671,776 pairs, positives 546,252/690,876 -> blocking recall 0.7907
+  val: 1,845,632 pairs, positives 273,175/345,229 -> blocking recall 0.7913
+Training LightGBM...
+[1000]  valid_0's binary_logloss: 0.023599   (did not early-stop)
+Validation macro F0.5 = 0.8652 at threshold 0.625
+Top features by gain: a_tset, a_partial, cc_partial, n_tsort, hs_eq, at_tset, cc_ratio, a_tset_gap, n_partial, n_tset, n_cand, ntok_r
+Saved model. Total 755s
+
+# v1 prediction
+  S1=1,732,544 S2+S3=9,969,589; countries: india 809,986, us 663,106, france 259,452
+  12 chunks of 150,000, ~2.9M pairs each, ~35s each
+Wrote output: 1,732,544 rows, 4,629,486 matches, 195,310 empty (11.3%); candidates 33,637,764; threshold 0.625. Total 1924s
+Organisers' validator: PASS (4,999 S1 with no candidates)

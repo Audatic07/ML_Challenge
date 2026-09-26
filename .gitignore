@@ -12,3 +12,14 @@ __pycache__/
 .env
 .env.*
 CLAUDE.local.md
+
+# pipeline caches and outputs (never commit)
+er_work*/
+output_v*/
+*.parquet
+*.tsv
+*.log
+model.txt
+meta.json
+val_s1_ids.csv
+.ipynb_checkpoints/

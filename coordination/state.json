@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 2,
+  "epoch": 3,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-26T20:23:53.2357931Z",
+  "updated_at": "2026-09-26T20:25:05.6389616Z",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -189,7 +189,26 @@
       "evidence": []
     }
   ],
-  "active_job_reservations": [],
+  "active_job_reservations": [
+    {
+      "job_id": "entity-res-v4-20260927-astra",
+      "region": "ap-south-1",
+      "data": "provided dataset only; existing private SageMaker bucket, SSE-S3 and Block Public Access verified",
+      "maximum_runtime_hours": 6,
+      "instance": "ml.m7i.2xlarge",
+      "authorized_job_spend_cap_usd": 10,
+      "status": "reserved-not-launched",
+      "created_at": "2026-09-26T20:25:05.6389616Z",
+      "source_code_sha": "8dcafb417581c06e7e3a9b2de9f70c2bd45baa54",
+      "service": "SageMaker Studio JupyterLab",
+      "owner_session": "astra-20260927-0158",
+      "training": "fit=400000, stop=10000, tune=100000, full train target catalog",
+      "maximum_instance_charge_usd": 3.054,
+      "overall_user_cap_usd": 100,
+      "price_per_hour_usd": 0.509,
+      "account_alias": "authorized-sagemaker-ap-south-1"
+    }
+  ],
   "submission_history": [],
   "handoffs": [],
   "budget": {

@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 5,
+  "epoch": 6,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-26T22:26:27Z",
+  "updated_at": "2026-09-26T23:05:31Z",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -56,7 +56,7 @@
       ],
       "base_main_sha": "e1502f6",
       "created_at": "2026-09-26T22:21:31Z",
-      "next_checkpoint": "workers running; train task complete with tune macro F0.5/oracle U; test scoring",
+      "next_checkpoint": "v5 and v5.1 train tasks: tune macro F0.5 and oracle U; then test scoring",
       "deliverable": "Distributed v5 retrieval+features+LightGBM on SageMaker notebook instances; tune metrics; test TSVs"
     }
   ],
@@ -273,7 +273,14 @@
       "instance_limit_note": "account limit: 8 notebook instances; t3 extras refused",
       "lifecycle_config": "er-v5-worker",
       "source_code": "codex/v5-dist-claude-20260927 (code.tar.gz in s3 prefix code/)",
-      "plan": "205 tasks: 115 feat (train 510000 rows, test 1732544 rows), train, 88 score, final"
+      "plan": "205 tasks: 115 feat (train 510000 rows, test 1732544 rows), train, 88 score, final",
+      "source_code_sha": "87298e0 (codex/v5-dist-claude-20260927)",
+      "queues": [
+        "shared/er-v5-20260927 (v5 baseline)",
+        "shared/er-v51-20260927 (v5.1)",
+        "shared/er-v5-bench1 (retrieval benchmark, done)"
+      ],
+      "evidence": "coordination/evidence/v5-dist/claude-20260927-0340.md on the task branch"
     }
   ],
   "submission_history": [],

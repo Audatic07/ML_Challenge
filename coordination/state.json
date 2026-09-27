@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 39,
+  "epoch": 40,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T15:21:40.535116+00:00",
+  "updated_at": "2026-09-27T15:39:24.277840+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -287,7 +287,18 @@
       "preregistered_rule": "B4 replaces the submitted B2 only if (1) B4 OOF on the same 100k tune S1 and folds >= B2 OOF 0.97769 + 0.0003, (2) G2 passes vs V6, (3) a second, disclosed audit look passes G3 vs V6 and scores >= 0.97859 (B2 audit 0.97809 + 0.0005). Otherwise B2 stays.",
       "next_checkpoint": "second disclosed audit look for B4 (rule: G3 pass vs V6 and audit >= 0.97859); B4 test prediction and collect",
       "result": "B4 = F0+F1+F3+F2 (533bcae), same 100k tune S1 and folds: OOF 0.98002 at alpha 1.0, threshold 0.7375; +0.00941 vs V6 (se 0.00023); G2 PASS; beats B2 (0.97769) by 0.00233 >= 0.0003. release.json sha256 43987d03144b43c77d4893c673040fb2999ef1889681f354562272a355c77f90",
-      "checkpoint_at": "2026-09-27T15:21:40.535116+00:00"
+      "checkpoint_at": "2026-09-27T15:39:24.277840+00:00",
+      "g3": {
+        "audit_s1": 220682,
+        "v6_macro_f05": 0.97089,
+        "v7_b4_macro_f05": 0.98045,
+        "gain": 0.00957,
+        "se": 0.00015,
+        "result": "PASS",
+        "rule_met": "audit 0.98045 >= 0.97859 (B2 audit 0.97809 + 0.0005)",
+        "note": "second disclosed audit look after V6's and B2's, pre-registered at f63cea8 before any B4 number"
+      },
+      "decision": "B4 replaces B2 as the V7 submission"
     }
   ],
   "integration_claim": null,
@@ -756,7 +767,7 @@
       "price_per_hour_usd": 1.31,
       "price_source": "AWS Price List API ap-south-1, published 2026-09-27T02:52:30Z",
       "authorized_job_spend_cap_usd": 6,
-      "maximum_runtime": "stop by 21:00 IST 2026-09-27; target finish 19:45 IST",
+      "maximum_runtime": "stop by 22:30 IST 2026-09-27 (extended from 21:00 by the account owner's direction; cap unchanged)",
       "status": "running",
       "work": "V7 B1 gate (5-fold, WP2 code), lean audit survivors (WP3), then assigned test shards",
       "output_s3_prefix": "shared/er-v7-20260927/ (Aditya's bucket)",
@@ -929,6 +940,25 @@
       "pair_digest": "89e1aa978d44499feb52b7f2c0d5295e51fea39be4dab7b23f17ba9c3382bb73",
       "portal_submission": "pending: team lead uploads matching_results.tsv",
       "fallback": "AML_submission_v6.zip unchanged"
+    },
+    {
+      "package": "V7 B4 final files (notebook ~/SageMaker/work/final_b4/output; S3 shared/er-v7-20260927/final-b4/output/)",
+      "matching_results_sha256": "2bceeace7ca080f799922aecbed233a3a1a56f101ec8e90cb35e05813ed822bb",
+      "candidate_pairs_sha256": "9c438703e605ac9d5fc4c0931b1c2272743054e75aeeb019b95891a2c83a9872",
+      "candidate_pairs_is_v6_bytes": true,
+      "candidate_pairs": 9266800,
+      "matched_pairs": 5751635,
+      "tune_oof_macro_f05": 0.98002,
+      "audit_macro_f05": 0.98045,
+      "audit_v6_same_run": 0.97089,
+      "threshold": 0.7375,
+      "alpha": 1.0,
+      "code_sha": "533bcae",
+      "release_sha256": "43987d03144b43c77d4893c673040fb2999ef1889681f354562272a355c77f90",
+      "france": "routed to V6 rows (France rJ_present 0.395 outside US/India 0.208-0.226)",
+      "validator": "official validator exit 0 (--check-ids) and src.strict_validate exit 0",
+      "portal_submission": "pending: team lead uploads matching_results.tsv",
+      "supersedes": "V7 B2 (0504edf4)"
     }
   ],
   "current_plan": {

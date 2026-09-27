@@ -50,7 +50,7 @@ def _scores(rng, n_s1, n_targets, truth, first=0):
     return rows
 
 
-def test_release_gate_predict_collect(tmp_path):
+def test_release_gate_predict_collect(tmp_path, monkeypatch):
     import json
     import os
     import random
@@ -60,6 +60,8 @@ def test_release_gate_predict_collect(tmp_path):
 
     import pytest
 
+    if not os.environ.get("ER_VALIDATOR"):
+        pytest.skip("set ER_VALIDATOR to the supplied utils/validate_submission.py")
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools" / "v6_analysis"))
     import stage2_release as sr
     from test_v5 import make_split
@@ -68,9 +70,8 @@ def test_release_gate_predict_collect(tmp_path):
     data = tmp_path / "student_resource" / "dataset"
     make_split(data, "train", ["US", "India"], 240, rng)
     make_split(data, "test", ["US", "India", "France"], 90, rng)
-    if os.environ.get("ER_VALIDATOR"):
-        (data.parent / "utils").mkdir()
-        shutil.copyfile(os.environ["ER_VALIDATOR"], data.parent / "utils" / "validate_submission.py")
+    (data.parent / "utils").mkdir()
+    shutil.copyfile(os.environ["ER_VALIDATOR"], data.parent / "utils" / "validate_submission.py")
 
     def table(split, name):
         return pl.read_csv(data / split / f"{split}_{name}.tsv", separator="\t", quote_char=None, infer_schema=False)
@@ -98,59 +99,95 @@ def test_release_gate_predict_collect(tmp_path):
                      ).write_parquet(folder / "tune_scores.parquet")
 
     release = tmp_path / "release"
+    monkeypatch.setattr(sr, "g2_pass", lambda d: True)  # synthetic data: force a release to exercise the rest
     assert sr.main(["gate", "--ens3", str(ens3), "--members", str(members), "--data", str(data), "--out", str(release),
-                    "--expect-f", "0", "--z", "-1e9", "--threads", "2"]) == 0  # forced pass: synthetic data
+                    "--expect-f", "0", "--threads", "2"]) == 0
     gate = json.loads((release / "gate.json").read_text())
     rel = json.loads((release / "release.json").read_text())
-    assert gate["survivor_rows"] == len(base) and gate["audit_opened"] is False
-    assert rel["candidate_policy"]["n"] == 12 and len(rel["models"]) == 2 and rel["features"][0] == "p1"
+    assert gate["survivor_rows"] == len(base) and gate["audit_opened"] is False and gate["chosen"] == "B1"
+    assert rel["candidate_policy"]["n"] == 12 and len(rel["models"]) == 5 and rel["selection"]["alpha"] in (0.5, 1.0)
+    assert {"p6", "p6_logit", "v51_p", "v51_logit"} <= set(rel["features"]) and "p1" not in rel["features"]
+    assert sum(rel["monotone_constraints"]) == 4
+    # Folds come from SHA-256 of the entity ID: a fixed value, independent of any Python/Polars hash seed.
+    assert sr.stable_mod(["S1-a"], 5, "v7-fold:")[0] == int.from_bytes(
+        __import__("hashlib").sha256(b"v7-fold:S1-a").digest()[:8], "little") % 5
 
-    test_targets = pl.concat([table("test", "source2"), table("test", "source3")])["entity_id"].to_list()
+    tt = pl.concat([table("test", "source2"), table("test", "source3")])
+    test_targets, q_country = tt["entity_id"].to_list(), table("test", "source1")["country"].to_list()
+    pool = {c: [i for i, x in enumerate(tt["country"]) if x == c] for c in set(q_country)}  # catalogs are per country
     scores = tmp_path / "scores"
     scores.mkdir()
     shards = {"v6score-test-A-000": (0, 30), "v6score-test-A-001": (30, 30), "v6score-test-A-002": (60, 29)}  # S1 89: no survivors
     for name, (first, count) in shards.items():
-        rows = _scores(rng, count, len(test_targets), {}, first)
+        rows = [(q, t, False, min(0.999, 0.011 + 0.98 * rng.random()))
+                for q in range(first, first + count) for t in sorted(rng.sample(pool[q_country[q]], 6))]
         pl.DataFrame({"s1": pl.Series([r[0] for r in rows], dtype=pl.UInt32), "t": pl.Series([r[1] for r in rows], dtype=pl.UInt32),
                       "target_id": [test_targets[r[1]] for r in rows], "p1": pl.Series([r[3] for r in rows], dtype=pl.Float32),
                       "p": pl.Series([rng.random() for _ in rows], dtype=pl.Float32)}).write_parquet(scores / f"{name}.parquet")
 
-    common = ["--release", str(release / "release.json"), "--scores", str(scores)]
+    rel_path = str(release / "release.json")
     bench = "abhigyan-r7i4xl=v6score-test-A-000,akash-r5xl=v6score-test-A-001"
-    sr.main(["assign", *common, "--out", str(tmp_path / "a0.json"), "--benchmark", bench, "--expect-shards", "3"])
+    sr.main(["assign", "--release", rel_path, "--scores", str(scores), "--out", str(tmp_path / "a0.json"), "--benchmark", bench,
+             "--expect-shards", "3"])
+    cache = tmp_path / "cache"
+    sr.main(["features", "--split", "test", "--scores", str(scores), "--data", str(data), "--out", str(cache),
+             "--shards", "v6score-test-A-000", "--threads", "2"])
+    assert (cache / "v6score-test-A-000.feat.json").exists()
     out = {w: tmp_path / w for w in ("abhigyan-r7i4xl", "akash-r5xl")}
-    run = ["--release", str(release / "release.json"), "--scores", str(scores), "--data", str(data)]
+    run = ["--release", rel_path, "--scores", str(scores), "--data", str(data), "--cache", str(cache), "--threads", "2"]
     for worker in out:
         sr.main(["predict", *run, "--assignment", str(tmp_path / "a0.json"), "--worker", worker, "--out", str(out[worker])])
     with pytest.raises(SystemExit):  # a worker without an assignment processes nothing
         sr.main(["predict", *run, "--assignment", str(tmp_path / "a0.json"), "--worker", "aditya-worker", "--out", str(tmp_path / "x")])
     rates = ",".join(f"{w}={out[w] / (s + '.json')}" for w, s in (x.split("=") for x in bench.split(",")))
-    sr.main(["assign", *common, "--out", str(tmp_path / "a1.json"), "--benchmark", bench, "--rates", rates, "--expect-shards", "3"])
+    sr.main(["assign", "--release", rel_path, "--scores", str(scores), "--out", str(tmp_path / "a1.json"), "--benchmark", bench,
+             "--rates", rates, "--expect-shards", "3"])
     a1 = json.loads((tmp_path / "a1.json").read_text())
     assert sorted(s for v in a1["workers"].values() for s in v) == sorted(shards)
     for worker in out:
         sr.main(["predict", *run, "--assignment", str(tmp_path / "a1.json"), "--worker", worker, "--out", str(out[worker])])
+    first = pl.read_parquet(out["abhigyan-r7i4xl"] / "v6score-test-A-000.parquet")
+    assert first.columns == sr.OUT_COLUMNS and first["s"].is_finite().all()
 
+    q = table("test", "source1")
+    v6 = tmp_path / "v6_matching.tsv"  # a valid stand-in for V6's file: no matches anywhere
+    q.select(pl.col("entity_id").alias("source1_entity_id"), pl.lit("").alias("matched_entity_ids")).write_csv(
+        v6, separator="\t", quote_style="never")
+    collect = ["collect", "--release", rel_path, "--assignment", str(tmp_path / "a1.json"), "--data", str(data),
+               "--v6-matching", str(v6)]
     final = tmp_path / "final"
-    sr.main(["collect", "--release", str(release / "release.json"), "--assignment", str(tmp_path / "a1.json"),
-             "--inputs", ",".join(str(p) for p in out.values()), "--data", str(data), "--out", str(final)])
+    sr.main([*collect, "--inputs", ",".join(str(p) for p in out.values()), "--out", str(final)])
     match = pl.read_csv(final / "output" / "matching_results.tsv", separator="\t", infer_schema=False)
     cand = pl.read_csv(final / "output" / "candidate_pairs.tsv", separator="\t", infer_schema=False)
     assert match.height == cand.height == 90 and match["source1_entity_id"].n_unique() == 90
-    last = table("test", "source1")["entity_id"][89]
+    last = q["entity_id"][89]
     assert match.filter(pl.col("source1_entity_id") == last)["matched_entity_ids"].fill_null("").item() == ""
     assert cand.filter(pl.col("source1_entity_id") == last)["candidate_entity_ids"].fill_null("").item() == ""
     for m, c in zip(match["matched_entity_ids"].fill_null(""), cand["candidate_entity_ids"].fill_null("")):
         assert set(filter(None, m.split(","))) <= set(filter(None, c.split(",")))
     report = json.loads((final / "collect_report.json").read_text())
-    assert report["shards"] == 3 and report.get("validator_exit") in (0, None)
+    assert report["shards"] == 3 and report["validator_exit"] == 0 and report["strict_validator_exit"] == 0
+    if report["france_routed_to_v6"]:  # France rows are V6's rows, byte for byte
+        fr = set(q.filter(pl.col("country") == "France")["entity_id"])
+        assert (match.filter(pl.col("source1_entity_id").is_in(fr))["matched_entity_ids"].fill_null("") == "").all()
 
-    dup = tmp_path / "dup"  # the same shard delivered by two workers must be refused
+    def refused(inputs, name):
+        with pytest.raises(SystemExit):
+            sr.main([*collect, "--inputs", ",".join(map(str, inputs)), "--out", str(tmp_path / name)])
+
+    dup = tmp_path / "dup"  # the same shard delivered by two workers
     dup.mkdir()
-    for f in out["akash-r5xl"].glob("v6score-test-A-000.*") or out["abhigyan-r7i4xl"].glob("v6score-test-A-000.*"):
-        shutil.copy(f, dup)
     for f in out["abhigyan-r7i4xl"].glob("v6score-test-A-000.*"):
         shutil.copy(f, dup)
-    with pytest.raises(SystemExit):
-        sr.main(["collect", "--release", str(release / "release.json"), "--assignment", str(tmp_path / "a1.json"),
-                 "--inputs", ",".join([*(str(p) for p in out.values()), str(dup)]), "--data", str(data), "--out", str(tmp_path / "f2")])
+    refused([*out.values(), dup], "f_dup")
+    gone = tmp_path / "gone"  # a missing shard
+    shutil.copytree(out["akash-r5xl"], gone)
+    for f in gone.glob("*.json"):
+        f.unlink()
+    refused([out["abhigyan-r7i4xl"], gone], "f_missing")
+    bad = tmp_path / "bad"  # one target changed with the same row count
+    shutil.copytree(out["akash-r5xl"], bad)
+    shard = next(bad.glob("*.parquet"))
+    frame = pl.read_parquet(shard)
+    frame.with_columns(pl.when(pl.int_range(pl.len()) == 0).then(pl.col("t") + 1).otherwise(pl.col("t")).alias("t")).write_parquet(shard)
+    refused([out["abhigyan-r7i4xl"], bad], "f_bad")

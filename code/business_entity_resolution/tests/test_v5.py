@@ -136,6 +136,26 @@ def test_distributed_pipeline_end_to_end(tmp_path, variant):
     report = json.loads((store / "final" / "report.json").read_text())
     if validator.exists():
         assert report["validator_exit"] == 0, report["validator_output"]
+    if "--anchors" in variant:
+        # stage-1 cascade on the finished run: tune evaluation, then survivors-only final
+        cascade = [sys.executable, "-m", "src.v5_cascade"]
+        run_worker = common + ["worker", "--data", str(data), "--root", str(store), "--prefix", "c",
+                               "--work", str(tmp_path / "wc"), "--name", "casc", "--workers", "2", "--mem-gb", "64"]
+        subprocess.run(cascade + ["eval", "--root", str(store), "--source", "", "--prefix", "c", "--ns", "3,5"],
+                       cwd=ROOT, check=True)
+        subprocess.run(run_worker, cwd=ROOT, check=True)
+        evaluation = json.loads((store / "c" / "ceval" / "result.json").read_text())
+        assert evaluation["h_rank<=5"]["oracle_u"] >= evaluation["h_rank<=3"]["oracle_u"]
+        subprocess.run(cascade + ["score", "--root", str(store), "--source", "", "--prefix", "c", "--n", "5",
+                                  "--threshold", str(evaluation["h_rank<=5"]["threshold"])], cwd=ROOT, check=True)
+        subprocess.run(run_worker, cwd=ROOT, check=True)
+        assert not (store / "c" / "failed").exists()
+        cands = pl.read_csv(store / "c" / "final" / "candidate_pairs.tsv", separator="\t", infer_schema=False)
+        sizes = cands["candidate_entity_ids"].fill_null("").str.split(",").list.len()
+        assert len(cands) == 150 and sizes.max() <= 10  # 5 per query, each from S2 or S3 ranks
+        report = json.loads((store / "c" / "final" / "report.json").read_text())
+        if validator.exists():
+            assert report["validator_exit"] == 0, report["validator_output"]
     # retrieval benchmark task on the same data and store
     rows = sorted(plan["tune_rows"])
     char = {"analyzer": "char_wb", "ngram": [3, 4], "max_df": 0.5}

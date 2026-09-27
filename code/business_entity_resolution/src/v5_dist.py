@@ -89,7 +89,8 @@ class Store:
 
     def __init__(self, bucket=None, prefix="", root=None):
         self.bucket, self.prefix = bucket, prefix.strip("/")
-        self.root = Path(root) if root else None
+        self.base_root = Path(root) if root else None
+        self.root = (self.base_root / self.prefix if self.prefix else self.base_root) if root else None
         if bucket:
             import boto3
             from botocore.config import Config
@@ -761,7 +762,71 @@ def run_bench(task, store, ctx):
     return {"queries": len(rows), "variants": len(results)}
 
 
-RUNNERS = {"feat": run_feat, "train": run_train, "score": run_score, "final": run_final, "bench": run_bench}
+def survivors(frame, cascade):
+    """Stage-1 blocking filter applied before the final model: keep the top `n` candidates
+    of each query by a label-free rank feature (default h_rank, the anchor heuristic)."""
+    return frame.filter(pl.col(cascade.get("rank", "h_rank")) <= cascade["n"])
+
+
+def run_ceval(task, store, ctx):
+    """Tune-set evaluation of stage-1 cut-offs: survivor oracle U and end-to-end macro F0.5
+    with the threshold re-selected on survivors. Uses saved tune scores of the source run."""
+    source = Store(store.bucket, task["source_prefix"], store.base_root)
+    plan = ctx.plan
+    tune = np.asarray(plan["tune_rows"], dtype=np.uint32)
+    tune_s = pl.Series(tune)
+    ranks = task.get("ranks", ["h_rank"])
+    parts = []
+    for shard in task["inputs"]:
+        path = source.download(f"feat/{shard}.parquet", ctx.work / "in" / f"{shard}.parquet")
+        parts.append(pl.read_parquet(path, columns=["s1", "target_id", *ranks])
+                     .filter(pl.col("s1").is_in(tune_s.implode())))
+        path.unlink()
+    rank = pl.concat(parts)
+    scores = pl.read_parquet(source.download("model/tune_scores.parquet", ctx.work / "in" / "tune_scores.parquet"))
+    scores = scores.join(rank, on=["s1", "target_id"], how="inner")
+    truth, _ = truth_for(ctx.data, {"tune": tune}, np.array([], dtype=np.uint32))
+    gt = truth.select("s1", pl.col("target_id").alias("t"))
+    results = {}
+    for column in ranks:
+        for n in task["ns"]:
+            kept = scores.filter(pl.col(column) <= n)
+            hit = kept.select("s1", pl.col("target_id").alias("t")).join(gt, on=["s1", "t"])
+            oracle = f05_macro(tune, gt, hit)
+            assigned = unique_assign(kept)
+            grid = [(float(th), f05_macro(tune, gt, assigned.filter(pl.col("p") >= th)
+                                          .select("s1", pl.col("target_id").alias("t"))))
+                    for th in np.arange(0.6, 0.951, 0.01)]
+            threshold, best = max(grid, key=lambda item: item[1])
+            results[f"{column}<={n}"] = {"macro_f05": best, "threshold": threshold, "oracle_u": oracle,
+                                          "link_recall": len(hit) / max(1, len(gt)),
+                                          "pairs_per_query": len(kept) / len(tune)}
+            log(f"ceval {column}<={n}: {results[f'{column}<={n}']}")
+    store.put_json("ceval/result.json", results)
+    return results
+
+
+def run_cascade(task, store, ctx):
+    """Final scoring of one test shard: stage-1 survivors only, scored by the final model."""
+    source = Store(store.bucket, task["source_prefix"], store.base_root)
+    manifest = ctx.model_manifest(store)
+    booster = ctx.booster(store)
+    names = manifest["features"]
+    path = source.download(f"feat/{task['input']}.parquet", ctx.work / "in" / f"{task['input']}.parquet")
+    frame = survivors(pl.read_parquet(path), manifest["cascade"])
+    path.unlink()
+    p = booster.predict(frame.select(names).to_numpy(), num_threads=ctx.workers)
+    out = frame.select("s1", "t", "target_id").with_columns(pl.Series("p", p.astype(np.float32)))
+    local = ctx.work / f"{task['id']}.parquet"
+    out.write_parquet(local)
+    store.upload(local, f"score/{task['id']}.parquet")
+    local.unlink()
+    return {"pairs": len(out), "queries": out["s1"].n_unique(),
+            "above_threshold": int((out["p"] >= manifest["threshold"]).sum())}
+
+
+RUNNERS = {"feat": run_feat, "train": run_train, "score": run_score, "final": run_final, "bench": run_bench,
+           "ceval": run_ceval, "cascade": run_cascade}
 
 
 def uploader(holder, name, logfile, state, stop):
@@ -803,7 +868,7 @@ class Queue:
         release_interrupted(self.store, args.name)
 
     def ready(self, name, total_mem, current):
-        if self.loaded_at is None or time.monotonic() - self.loaded_at > 300:
+        if self.loaded_at is None or time.monotonic() - self.loaded_at > 60:
             for item in self.store.list("tasks"):
                 if item.endswith(".json") and item[:-5] not in self.tasks:
                     self.tasks[item[:-5]] = self.store.get_json(f"tasks/{item}")

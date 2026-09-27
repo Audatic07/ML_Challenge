@@ -762,10 +762,18 @@ def run_bench(task, store, ctx):
     return {"queries": len(rows), "variants": len(results)}
 
 
+def stage_rank(policy):
+    """Label-free stage-1 rank within each query: a rank feature, or the ordinal rank of
+    the sum of retrieval cosine scores (a candidate missing from a channel scores 0 there)."""
+    if "score" in policy:
+        return pl.sum_horizontal([pl.col(c) for c in policy["score"]]).rank("ordinal", descending=True).over("s1")
+    return pl.col(policy.get("rank", "h_rank"))
+
+
 def survivors(frame, cascade):
     """Stage-1 blocking filter applied before the final model: keep the top `n` candidates
-    of each query by a label-free rank feature (default h_rank, the anchor heuristic)."""
-    return frame.filter(pl.col(cascade.get("rank", "h_rank")) <= cascade["n"])
+    of each query by the label-free stage-1 rank."""
+    return frame.filter(stage_rank(cascade) <= cascade["n"])
 
 
 def run_ceval(task, store, ctx):
@@ -775,11 +783,12 @@ def run_ceval(task, store, ctx):
     plan = ctx.plan
     tune = np.asarray(plan["tune_rows"], dtype=np.uint32)
     tune_s = pl.Series(tune)
-    ranks = task.get("ranks", ["h_rank"])
+    policies = task.get("policies") or [{"name": r, "rank": r} for r in task.get("ranks", ["h_rank"])]
+    columns = sorted({c for p in policies for c in (p["score"] if "score" in p else [p["rank"]])})
     parts = []
     for shard in task["inputs"]:
         path = source.download(f"feat/{shard}.parquet", ctx.work / "in" / f"{shard}.parquet")
-        parts.append(pl.read_parquet(path, columns=["s1", "target_id", *ranks])
+        parts.append(pl.read_parquet(path, columns=["s1", "target_id", *columns])
                      .filter(pl.col("s1").is_in(tune_s.implode())))
         path.unlink()
     rank = pl.concat(parts)
@@ -788,9 +797,11 @@ def run_ceval(task, store, ctx):
     truth, _ = truth_for(ctx.data, {"tune": tune}, np.array([], dtype=np.uint32))
     gt = truth.select("s1", pl.col("target_id").alias("t"))
     results = {}
-    for column in ranks:
+    for policy in policies:
+        column = policy["name"]
+        ranked = scores.with_columns(stage_rank(policy).alias("_stage_rank"))
         for n in task["ns"]:
-            kept = scores.filter(pl.col(column) <= n)
+            kept = ranked.filter(pl.col("_stage_rank") <= n)
             hit = kept.select("s1", pl.col("target_id").alias("t")).join(gt, on=["s1", "t"])
             oracle = f05_macro(tune, gt, hit)
             assigned = unique_assign(kept)
@@ -802,7 +813,7 @@ def run_ceval(task, store, ctx):
                                           "link_recall": len(hit) / max(1, len(gt)),
                                           "pairs_per_query": len(kept) / len(tune)}
             log(f"ceval {column}<={n}: {results[f'{column}<={n}']}")
-    store.put_json("ceval/result.json", results)
+    store.put_json(f"ceval/{task['id']}.json" if task["id"] != "ceval" else "ceval/result.json", results)
     return results
 
 

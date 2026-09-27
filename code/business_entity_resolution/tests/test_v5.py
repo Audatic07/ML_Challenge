@@ -141,12 +141,13 @@ def test_distributed_pipeline_end_to_end(tmp_path, variant):
         cascade = [sys.executable, "-m", "src.v5_cascade"]
         run_worker = common + ["worker", "--data", str(data), "--root", str(store), "--prefix", "c",
                                "--work", str(tmp_path / "wc"), "--name", "casc", "--workers", "2", "--mem-gb", "64"]
-        subprocess.run(cascade + ["eval", "--root", str(store), "--source", "", "--prefix", "c", "--ns", "3,5"],
+        subprocess.run(cascade + ["eval", "--root", str(store), "--source", "", "--prefix", "c", "--ns", "3,5", "--scores", "combo+combo_word"],
                        cwd=ROOT, check=True)
         subprocess.run(run_worker, cwd=ROOT, check=True)
         evaluation = json.loads((store / "c" / "ceval" / "result.json").read_text())
         assert evaluation["h_rank<=5"]["oracle_u"] >= evaluation["h_rank<=3"]["oracle_u"]
-        subprocess.run(cascade + ["score", "--root", str(store), "--source", "", "--prefix", "c", "--n", "5",
+        assert evaluation["combo+combo_word<=5"]["oracle_u"] >= evaluation["combo+combo_word<=3"]["oracle_u"]
+        subprocess.run(cascade + ["score", "--root", str(store), "--source", "", "--prefix", "c", "--n", "5", "--score", "combo+combo_word",
                                   "--threshold", str(evaluation["h_rank<=5"]["threshold"])], cwd=ROOT, check=True)
         subprocess.run(run_worker, cwd=ROOT, check=True)
         assert not (store / "c" / "failed").exists()

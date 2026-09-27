@@ -719,6 +719,9 @@ def run_collect(args):
     per_country = label_free(output / "matching_results.tsv", q)
     fallback, envelope = france_out_of_envelope([m for _, m in found.values()], per_country)
     report["france_envelope"] = envelope
+    report["france_routing"] = args.france_routing
+    if args.france_routing == "never":  # keep the model's own France rows (leaderboard: 0.972 vs 0.968 routed)
+        fallback = False
     if fallback:
         if not args.v6_matching:
             raise SystemExit("France is out of envelope and --v6-matching was not given")
@@ -785,6 +788,8 @@ def main(argv=None):
     c.add_argument("--v6-matching")
     c.add_argument("--v6-candidates")
     c.add_argument("--expect-full", action="store_true", help="enforce the full-test invariants of plan section 2")
+    c.add_argument("--france-routing", choices=["rule", "never"], default="rule",
+                   help="rule: G6 routes France to V6 rows when out of envelope; never: keep the model's France rows")
     for s in (g, f, p):
         s.add_argument("--threads", type=int, default=threads)
     args = parser.parse_args(argv)

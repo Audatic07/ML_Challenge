@@ -1,5 +1,24 @@
 # V7: a correction head over the V6 ens3 candidate set (plan revision 3)
 
+## Update 20:55 IST: B4 is the V7 submission
+
+B4 adds the F2 decoy-cluster features (revision 2 section 4; `src/v7_decoy.py`, `533bcae`) to B2. Rule pre-registered at
+control `f63cea8` before any B4 number: B4 replaces B2 only if its OOF beats B2 by >= 0.0003, G2 passes, and a second,
+disclosed audit look passes G3 with an audit score >= 0.97859.
+
+| Rung | Tune OOF (100k S1, same folds) | Audit (220,682 S1) | Test `matching_results.tsv` |
+| --- | ---: | ---: | --- |
+| V6 ens3 at 0.72 | 0.97061 | 0.97089 | `3f69fe5b...` |
+| B2 = F0+F1+F3 | 0.97769 (+0.00708, se 0.00021) | 0.97809 (+0.00720, se 0.00014) | `0504edf4...` |
+| **B4 = F0+F1+F3+F2** | **0.98002 (+0.00941, se 0.00023)** | **0.98045 (+0.00957, se 0.00015)** | **`2bceeace7ca080f799922aecbed233a3a1a56f101ec8e90cb35e05813ed822bb`** |
+
+B4: alpha 1.0, threshold 0.7375, 128 features, `release.json` SHA-256
+`43987d03144b43c77d4893c673040fb2999ef1889681f354562272a355c77f90`; 5,751,635 matched pairs; both validators exit 0;
+`candidate_pairs.tsv` is V6's file byte for byte; France routed to V6 by the same G6 rule. The audit has now been looked
+at three times (V6, B2, B4), each as a pre-registered decision; treat 0.98045 as selected, not untouched.
+Reproduce B4 with `gate --families F0F1F3F2` and the same steps below.
+
+
 Session `claude-abhigyan-20260927-1600` (Abhigyan), 27 September 2026, 16:00-19:50 IST. Code on `main` from this
 integration: WP2 `5ea334e`, WP3 `3bc79e5`, WP1 `09533fd`. Runs on one `ml.r7i.4xlarge` notebook in Abhigyan's account
 (`er-v7-abhigyan-r7i4xl-20260927`). Private artifacts are in `shared/er-v7-20260927/` of Aditya's bucket. This file holds

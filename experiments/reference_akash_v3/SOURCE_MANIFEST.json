@@ -1,0 +1,77 @@
+{
+  "source_commit": "d5f3775e0164825839c5e97c71b7dd60a00867fc",
+  "status": "reference only; canonical V6 files unchanged",
+  "excluded": "diagnostic/train logs; see original branch history",
+  "files": [
+    {
+      "source": "code/business_entity_resolution/README.md",
+      "path": "README.md",
+      "sha256": "616f6fb3f3c628138609197b34ac87095d160e3a34601007ab94d5e74c8616bf"
+    },
+    {
+      "source": "code/business_entity_resolution/requirements.txt",
+      "path": "requirements.txt",
+      "sha256": "f9ea340948f8971f4f66cb76cf0b53094bf7f2bf424c580ee3df3404f7fa636f"
+    },
+    {
+      "source": "code/business_entity_resolution/src/__init__.py",
+      "path": "src/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "code/business_entity_resolution/src/blocking.py",
+      "path": "src/blocking.py",
+      "sha256": "9cf4bc71ed28e502b563ec00d4b6022ef8bd5c372f46f37fd548016fcce2ed58"
+    },
+    {
+      "source": "code/business_entity_resolution/src/config.py",
+      "path": "src/config.py",
+      "sha256": "b6f00124ebba0df40ee12596b7fb4e5ce425f3c81839def2048e9d36fb825b0b"
+    },
+    {
+      "source": "code/business_entity_resolution/src/diag_misses.py",
+      "path": "src/diag_misses.py",
+      "sha256": "72dd0a16ef2078768a4d1625f5941cc1518f40b4e443206d46242c0f5eb2666a"
+    },
+    {
+      "source": "code/business_entity_resolution/src/features.py",
+      "path": "src/features.py",
+      "sha256": "eac4adf6e9221fd1c42fe04d7225227ffc563fd7562868f2e0bb78fe05098125"
+    },
+    {
+      "source": "code/business_entity_resolution/src/metric.py",
+      "path": "src/metric.py",
+      "sha256": "c8fc41a226ec6a60f6ec2d95d82dfca616157effcff56873e8fe33fdf17d4209"
+    },
+    {
+      "source": "code/business_entity_resolution/src/pipeline.py",
+      "path": "src/pipeline.py",
+      "sha256": "56a39ff3ce12daa97b142587ade8a9e98b09e8969b48967eeddbe0643e74b501"
+    },
+    {
+      "source": "code/business_entity_resolution/src/predict.py",
+      "path": "src/predict.py",
+      "sha256": "698420517e1e7a9b8ca931bef1cc140d8925fe8b57a08574fb9159b29ab81efa"
+    },
+    {
+      "source": "code/business_entity_resolution/src/prepare.py",
+      "path": "src/prepare.py",
+      "sha256": "84b4550127dbc6e722c807f661d2bb0afbe26525a0233b49d5afb7c98796baaa"
+    },
+    {
+      "source": "code/business_entity_resolution/src/text_norm.py",
+      "path": "src/text_norm.py",
+      "sha256": "a20c95c93128a0624ae689fa86b567fe5b99b36bb0fe5e48aae5cef165c8a4a5"
+    },
+    {
+      "source": "code/business_entity_resolution/src/train.py",
+      "path": "src/train.py",
+      "sha256": "4120a909cb9ad9902d48df2832448ac70fe0c020c11d97727e0e7c065e098768"
+    },
+    {
+      "source": "HANDOFF_V3.md",
+      "path": "HANDOFF_V3.md",
+      "sha256": "60116c9c03094ca928bb73bdfc4ec5b6798a345846fa36afb5232230d23765fd"
+    }
+  ]
+}

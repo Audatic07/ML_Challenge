@@ -101,10 +101,10 @@ def test_release_gate_predict_collect(tmp_path, monkeypatch):
     release = tmp_path / "release"
     monkeypatch.setattr(sr, "g2_pass", lambda d: True)  # synthetic data: force a release to exercise the rest
     assert sr.main(["gate", "--ens3", str(ens3), "--members", str(members), "--data", str(data), "--out", str(release),
-                    "--expect-f", "0", "--threads", "2"]) == 0
+                    "--expect-f", "0", "--threads", "2", "--families", "F0F1,F0F1F3"]) == 0
     gate = json.loads((release / "gate.json").read_text())
     rel = json.loads((release / "release.json").read_text())
-    assert gate["survivor_rows"] == len(base) and gate["audit_opened"] is False and gate["chosen"] == "B1"
+    assert gate["survivor_rows"] == len(base) and gate["audit_opened"] is False and set(gate["rungs"]) == {"B1", "B2"}
     assert rel["candidate_policy"]["n"] == 12 and len(rel["models"]) == 5 and rel["selection"]["alpha"] in (0.5, 1.0)
     assert {"p6", "p6_logit", "v51_p", "v51_logit"} <= set(rel["features"]) and "p1" not in rel["features"]
     assert sum(rel["monotone_constraints"]) == 4

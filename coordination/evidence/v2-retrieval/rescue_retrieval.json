@@ -1,0 +1,108 @@
+{
+  "query_ids_sha256": "49512d02d9abe254ff5bd868f0ab665cc304af63740f214cdb4b87059f68c9a1",
+  "seed": 42,
+  "definition": "candidate oracle, not model score",
+  "reports": [
+    {
+      "top_k": 60,
+      "queries": 5000,
+      "target_catalog": 10320219,
+      "true_pairs": 17126,
+      "retrieved_true_pairs": 14856,
+      "recall": 0.8674529954455215,
+      "oracle_f05": 0.9376377682123013,
+      "pairs": 237478,
+      "pairs_per_query": 47.4956,
+      "zero_candidates": 0,
+      "seconds": 2.0427100999995673,
+      "country_oracle": [
+        {
+          "country": "US",
+          "queries": 3002,
+          "oracle_f05": 0.9701275225777231
+        },
+        {
+          "country": "India",
+          "queries": 1998,
+          "oracle_f05": 0.8888218309725644
+        }
+      ]
+    },
+    {
+      "top_k": 100,
+      "queries": 5000,
+      "target_catalog": 10320219,
+      "true_pairs": 17126,
+      "retrieved_true_pairs": 15427,
+      "recall": 0.9007941142123088,
+      "oracle_f05": 0.9575804774644152,
+      "pairs": 354483,
+      "pairs_per_query": 70.8966,
+      "zero_candidates": 0,
+      "seconds": 0.8827813000007154,
+      "country_oracle": [
+        {
+          "country": "US",
+          "queries": 3002,
+          "oracle_f05": 0.9745426182027153
+        },
+        {
+          "country": "India",
+          "queries": 1998,
+          "oracle_f05": 0.9320948185573201
+        }
+      ]
+    },
+    {
+      "top_k": 300,
+      "queries": 5000,
+      "target_catalog": 10320219,
+      "true_pairs": 17126,
+      "retrieved_true_pairs": 16103,
+      "recall": 0.9402662618241271,
+      "oracle_f05": 0.9775518970556596,
+      "pairs": 656758,
+      "pairs_per_query": 131.3516,
+      "zero_candidates": 0,
+      "seconds": 0.8320366999996622,
+      "country_oracle": [
+        {
+          "country": "US",
+          "queries": 3002,
+          "oracle_f05": 0.9844871673736115
+        },
+        {
+          "country": "India",
+          "queries": 1998,
+          "oracle_f05": 0.967131636047406
+        }
+      ]
+    },
+    {
+      "top_k": 1000,
+      "queries": 5000,
+      "target_catalog": 10320219,
+      "true_pairs": 17126,
+      "retrieved_true_pairs": 16225,
+      "recall": 0.9473899334345439,
+      "oracle_f05": 0.9806138481255328,
+      "pairs": 767660,
+      "pairs_per_query": 153.532,
+      "zero_candidates": 0,
+      "seconds": 0.8645441999997274,
+      "country_oracle": [
+        {
+          "country": "US",
+          "queries": 3002,
+          "oracle_f05": 0.9870088878037044
+        },
+        {
+          "country": "India",
+          "queries": 1998,
+          "oracle_f05": 0.9710052850054774
+        }
+      ]
+    }
+  ],
+  "elapsed_seconds": 273.84106720000045
+}

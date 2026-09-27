@@ -1,0 +1,7 @@
+{
+  "address_char": {"top_k": 40},
+  "name_fold": {"top_k": 10},
+  "address_fold": {"top_k": 10},
+  "combo": {"view": "combo", "analyzer": "char_wb", "ngram": [3, 4], "max_df": 0.03, "top_k": 40},
+  "combo_word": {"view": "combo", "analyzer": "word", "ngram": [1, 2], "max_df": 0.05, "top_k": 60}
+}

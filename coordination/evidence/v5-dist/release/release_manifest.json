@@ -1,0 +1,18 @@
+{
+ "zip": "AML_submission.zip",
+ "zip_sha256": "c00693f465fba557fa38ab46a226a58da4abddd6e954b44194025a59348dfe0d",
+ "zip_bytes": 330705843,
+ "matching_results_sha256": "e37976e7aca557be9e5fed58fef153228bef2fd1aa043572a3b87ea2433e38e2",
+ "candidate_pairs_sha256": "27a78efe1a7914cd8668118534272c09bdfedd58544943f48af0a4c0c9156d7c",
+ "N": "30",
+ "TUNE_F": "0.9605",
+ "TUNE_U": "0.9841",
+ "TUNE_RECALL": "0.958",
+ "TUNE_PAIRS": "30",
+ "THRESHOLD": "0.72",
+ "CAND_TOTAL": "51,976,320",
+ "CAND_PER_Q": "30.0",
+ "MATCHED_Q": "1,624,730",
+ "MATCHED_P": "5,522,613",
+ "DELTA": "-0.0074"
+}

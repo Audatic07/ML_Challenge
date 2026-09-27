@@ -1,6 +1,6 @@
 # AGENTS.md: handoff for teammates and AI coding agents
 
-Read this before changing anything in `business_entity_resolution/`. It records what exists, why it was built this way, what must not break, and what is worth trying next. Give this whole file to your agent as context.
+Read this before changing anything in `code/business_entity_resolution/` (run commands from that folder). It records what exists, why it was built this way, what must not break, and what is worth trying next. Give this whole file to your agent as context.
 
 Status as of 26 Sep 2026, evening: v1 is complete, validated (organisers' validator: PASS) and ready for the portal. Challenge closes 27 Sep 2026, 11:59 PM IST.
 
@@ -91,6 +91,9 @@ About 40 features, computed in bulk with `rapidfuzz.process.cpdist` (multithread
 | Version | Change | Blocking recall | Val F0.5 | Threshold | Leaderboard |
 |---|---|---|---|---|---|
 | v1 | baseline | 0.79 (train 0.7907, val 0.7913) | 0.8652 | 0.625 | fill in |
+| v1 (repo) | same design, code committed in `code/business_entity_resolution/` | 0.79 (train 0.7916, val 0.7921) | 0.8709 | 0.675 | fill in |
+
+The v1 (repo) row was measured locally (Windows, 4 cores, 16 GB) with the default settings and `ER_CHUNK=50000`: train 688 s. Candidate oracle (best achievable F0.5 with these candidates) is 0.8964 on validation, so blocking alone caps this design near 0.90.
 
 v1 test output: 4,629,486 matches, 11.3% of entities empty, 33.6M candidate pairs, about 19 candidates per entity on average. Only 4,999 test entities (0.3%) got zero candidates.
 

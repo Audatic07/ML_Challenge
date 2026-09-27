@@ -1,0 +1,124 @@
+{
+  "query_ids_sha256": "49512d02d9abe254ff5bd868f0ab665cc304af63740f214cdb4b87059f68c9a1",
+  "seed": 42,
+  "profile": "rescue",
+  "rank": "text",
+  "retrieval_version": "2",
+  "key_types": {
+    "A": [
+      3,
+      1000
+    ],
+    "B": [
+      3,
+      1000
+    ],
+    "C": [
+      2,
+      1000
+    ],
+    "D": [
+      2,
+      500
+    ],
+    "E": [
+      1,
+      300
+    ],
+    "F": [
+      2,
+      300
+    ],
+    "G": [
+      2,
+      500
+    ],
+    "H": [
+      2,
+      200
+    ],
+    "I": [
+      1,
+      100
+    ]
+  },
+  "definition": "candidate oracle, not model score",
+  "reports": [
+    {
+      "top_k": 30,
+      "queries": 5000,
+      "target_catalog": 10320219,
+      "true_pairs": 17126,
+      "retrieved_true_pairs": 14831,
+      "recall": 0.865993226672895,
+      "oracle_f05": 0.9378274093755228,
+      "pairs": 132370,
+      "pairs_per_query": 26.474,
+      "zero_candidates": 0,
+      "seconds": 21.179326700000274,
+      "country_oracle": [
+        {
+          "country": "US",
+          "queries": 3002,
+          "oracle_f05": 0.957331045601691
+        },
+        {
+          "country": "India",
+          "queries": 1998,
+          "oracle_f05": 0.9085231471378066
+        }
+      ]
+    },
+    {
+      "top_k": 60,
+      "queries": 5000,
+      "target_catalog": 10320219,
+      "true_pairs": 17126,
+      "retrieved_true_pairs": 15387,
+      "recall": 0.8984584841761065,
+      "oracle_f05": 0.9567461763488547,
+      "pairs": 237478,
+      "pairs_per_query": 47.4956,
+      "zero_candidates": 0,
+      "seconds": 9.13868409999941,
+      "country_oracle": [
+        {
+          "country": "US",
+          "queries": 3002,
+          "oracle_f05": 0.9649337022509354
+        },
+        {
+          "country": "India",
+          "queries": 1998,
+          "oracle_f05": 0.944444398191675
+        }
+      ]
+    },
+    {
+      "top_k": 100,
+      "queries": 5000,
+      "target_catalog": 10320219,
+      "true_pairs": 17126,
+      "retrieved_true_pairs": 15768,
+      "recall": 0.9207053602709331,
+      "oracle_f05": 0.9684378946033375,
+      "pairs": 354483,
+      "pairs_per_query": 70.8966,
+      "zero_candidates": 0,
+      "seconds": 10.730624599999828,
+      "country_oracle": [
+        {
+          "country": "US",
+          "queries": 3002,
+          "oracle_f05": 0.972246702333
+        },
+        {
+          "country": "India",
+          "queries": 1998,
+          "oracle_f05": 0.9627151514579694
+        }
+      ]
+    }
+  ],
+  "elapsed_seconds": 206.61165340000025
+}

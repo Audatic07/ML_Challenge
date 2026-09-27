@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 42,
+  "epoch": 43,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T16:35:50.373789+00:00",
+  "updated_at": "2026-09-27T17:03:31.750130+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -92,7 +92,7 @@
     {
       "session_id": "astra-research-20260927-2200",
       "branch": "codex/final-research-astra-20260927-2200",
-      "status": "active; primary-source research and final implementation specification only"
+      "status": "complete locally; research-only claim released; no implementation or jobs; documents not published"
     }
   ],
   "claims": [
@@ -304,20 +304,6 @@
         "note": "second disclosed audit look after V6's and B2's, pre-registered at f63cea8 before any B4 number"
       },
       "decision": "B4 replaces B2 as the V7 submission"
-    },
-    {
-      "task_id": "FINAL-RESEARCH-PLAN",
-      "session_id": "astra-research-20260927-2200",
-      "branch": "codex/final-research-astra-20260927-2200",
-      "paths": [
-        "output/hackathon/FINAL_RESEARCH_IMPLEMENTATION_PLAN.md",
-        "coordination/evidence/final-research-plan/"
-      ],
-      "base_main_sha": "b99931f",
-      "created_at": "2026-09-27T16:35:50.373789+00:00",
-      "next_checkpoint": "Publish a cited, time-bounded specification with novel evidence beyond V7 B4 and measurable promotion gates",
-      "deliverable": "FINAL_RESEARCH_IMPLEMENTATION_PLAN.md and aggregate planning evidence; no implementation, model training, cloud jobs or portal actions",
-      "authorization": "User requests more research papers and a new final implementation plan FAST; existing peer claims preserved"
     }
   ],
   "integration_claim": null,

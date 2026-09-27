@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 37,
+  "epoch": 38,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T14:31:51.454820+00:00",
+  "updated_at": "2026-09-27T14:34:04.958995+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -31,7 +31,7 @@
   },
   "contract_version": "2.0-proposed",
   "contract_accepted": false,
-  "integration_commit": "2795605eeefef644fe87be952cf8ee03a43f3a26",
+  "integration_commit": "703b605",
   "dataset_manifest": null,
   "split_manifest": null,
   "incumbent_manifest": null,
@@ -288,13 +288,7 @@
       "next_checkpoint": "B4 gate on the notebook"
     }
   ],
-  "integration_claim": {
-    "session_id": "claude-abhigyan-20260927-1600",
-    "at": "2026-09-27T14:31:51.454820+00:00",
-    "integrating": "09533fd (V7 WP2+WP3+WP1, the code of the audited B2 release) plus aggregate V7 evidence",
-    "method": "fast-forward of main 46e7147, combined V7 and V6 tests before push",
-    "basis": "Abhigyan in chat: push V7 to GitHub"
-  },
+  "integration_claim": null,
   "submission_claim": null,
   "tasks": [
     {
@@ -522,12 +516,12 @@
     },
     {
       "id": "S2-MODEL",
-      "status": "claimed",
+      "status": "accepted",
       "owner_session": "claude-abhigyan-20260927-1600",
       "depends_on": [],
       "optional": true,
       "summary": "Stage-2 sibling model + expected-F selection on test survivors; +0.27 tune over S2-CUT (0.9705)",
-      "code_sha": "b607e93",
+      "code_sha": "703b605",
       "evidence": [
         "coordination/evidence/s2-model/claude-newacct-20260927-1155.md on codex/s2-model-claude-newacct-20260927-1155 (a35aead)",
         "coordination/evidence/s2-model/claude-abhigyan-20260927-1600.md on codex/s2-model-claude-abhigyan-20260927-1600 (b607e93)"
@@ -870,6 +864,12 @@
       "fallback": "AML_submission_v6.zip kept ready, SHA-256 re-verified 7d66db41... at 17:40 IST; no portal upload now; V6 is uploaded if V7 misses its gates by the cutoff",
       "access": "Applied by the account owner and verified live at 2026-09-27T12:14Z: statements AMLV7TeamReadV6V7, AMLV7TeamListV6V7, AMLV7TeamWriteV7 for roles SageMakerExecutionRole-AMLChallenge-Abhigyan (548171705578) and AmazonSageMaker-ExecutionRole-20260926T152784 (368083580896). Read: shared/er-v6ens3-20260927/, shared/er-v6-20260927/, shared/er-v6s7-20260927/, shared/er-v6l127-20260927/, shared/er-v51-audit-20260927/, shared/er-v7-20260927/. Write: shared/er-v7-20260927/ only. Expires 2026-09-28T00:00:00Z. Existing v5.1 grants unchanged.",
       "at": "2026-09-27T12:12:32.559996+00:00"
+    },
+    {
+      "id": "INTEGRATE-V7-B2",
+      "at": "2026-09-27T14:34:04.958995+00:00",
+      "decision": "main fast-forwarded 46e7147 -> 703b605: V7 WP2/WP3/WP1 (09533fd, the audited B2 release code) plus coordination/evidence/v7/claude-abhigyan-20260927-1600.md",
+      "basis": "Abhigyan in chat; V7 tests passed on 09533fd before integration; evidence-only commit on top"
     }
   ],
   "operator_dependencies": [

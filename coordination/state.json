@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 45,
+  "epoch": 46,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T17:57:53.083676+00:00",
+  "updated_at": "2026-09-27T18:20:25.858859+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -31,7 +31,7 @@
   },
   "contract_version": "2.0-proposed",
   "contract_accepted": false,
-  "integration_commit": "b99931f",
+  "integration_commit": "2c6f552",
   "dataset_manifest": null,
   "split_manifest": null,
   "incumbent_manifest": null,
@@ -773,7 +773,7 @@
       "price_source": "AWS Price List API ap-south-1, published 2026-09-27T02:52:30Z",
       "authorized_job_spend_cap_usd": 6,
       "maximum_runtime": "stop by 22:30 IST 2026-09-27 (extended from 21:00 by the account owner's direction; cap unchanged)",
-      "status": "running",
+      "status": "closing: notebooks amlc26-s2-abd (r7i.4xlarge) and amlc26-gpu-abd (g5.2xlarge) to be stopped by the account owner at about 23:55 IST",
       "work": "V7 B1 gate (5-fold, WP2 code), lean audit survivors (WP3), then assigned test shards",
       "output_s3_prefix": "shared/er-v7-20260927/ (Aditya's bucket)",
       "shutdown": "outputs synced to S3, then console Stop (SageMaker AI > Notebook instances > Actions > Stop)",
@@ -921,6 +921,15 @@
       "result": "B5 = B4 features + 4 SC-Block cosine features (all-MiniLM-L6-v2, Apache-2.0, SupCon on 377,448 fit-only groups, 1 epoch in 101 s on ml.g5.2xlarge): tune OOF 0.98043 vs B4 0.98002 reproduced on the same folds, +0.00041 (paired se 0.00010); below the pre-registered +0.0010 bar. Test cosines were not produced (GPU job interrupted at 23:30 IST); nothing submitted.",
       "next": "rerun tools/v8/gpu.py end to end (train+tune+test in one process), then cpu.py gate/test; consider more epochs and hard negatives",
       "final_submission_tonight": "97ceedb9... (V7-B4 with V7's own France rows), public leaderboard 0.972"
+    },
+    {
+      "id": "INTEGRATE-V8-AND-CLOSE",
+      "at": "2026-09-27T18:20:25.858859+00:00",
+      "decision": "main b99931f -> 2c6f552 (fast-forward): tools/v8 (SC-Block), collect --france-routing never, tools/v7_thresholds.py, V8 evidence. Work stopped at 23:50 IST by the user; AWS resources being shut down.",
+      "files": {
+        "v7_b4_france_own_0972": "97ceedb9ce85c2d2f19fc7d5c697a03b95964b2e5535962151176c09aef1b6c5",
+        "v8_b5": "63ea83262f19b6b81afb0048e8c444c6c6b8bd9a4b0f634fbccce89d6ad28628 (official validator PASS; B5 tune +0.00041 over B4, gate overridden by the team lead)"
+      }
     }
   ],
   "operator_dependencies": [

@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 33,
+  "epoch": 34,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T13:46:27.474870+00:00",
+  "updated_at": "2026-09-27T14:06:30.370413+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -180,9 +180,9 @@
       "base_sha": "a35aead (codex/s2-model-claude-newacct-20260927-1155) merged with 42714bb (V6-TRAIN, unchanged)",
       "created_at": "2026-09-27T14:53:43.876736+05:30",
       "scope": "Stage 2 stacked on the frozen v6 ens3 survivors: tune gate ens3 vs ens3+stage2 on the same tune S1 and survivors; only if it passes, frozen release manifest, shard-aware test inference on assigned workers and a collector. No audit access, no V6-TRAIN paths.",
-      "next_checkpoint": "G3 once for B2 on the lean audit survivors; B2 test prediction from the F3 cache; collect",
+      "next_checkpoint": "collect B2 (validators, France routing, V6 candidate bytes); hand matching_results.tsv to the portal operator",
       "code_sha": "b607e93",
-      "checkpoint_at": "2026-09-27T13:46:27.474870+00:00",
+      "checkpoint_at": "2026-09-27T14:06:30.370413+00:00",
       "transfer": {
         "from": "claude-newacct-20260927-1155",
         "at": "2026-09-27T16:50:31.824088+05:30",
@@ -204,7 +204,18 @@
           "code_sha": "5ea334e"
         }
       ],
-      "result": "V7 rungs on the same 100k tune S1 and folds (G0: V6 at 0.72 = 0.97061). B1 (3bc79e5): OOF 0.97215, +0.00155 (se 0.00018). B2 F0+F1+F3 (09533fd): OOF 0.97769 at alpha 1.0, threshold 0.71, +0.00708 (se 0.00021), G2 PASS; B2 beats B1 by >= 0.0003, so B2 is the V7 candidate. release.json sha256 1f135bde2cf24327cd39d7e28fdc80f224bc423f852c94f14d1a01e61a83b7df"
+      "result": "V7 rungs on the same 100k tune S1 and folds (G0: V6 at 0.72 = 0.97061). B1 (3bc79e5): OOF 0.97215, +0.00155 (se 0.00018). B2 F0+F1+F3 (09533fd): OOF 0.97769 at alpha 1.0, threshold 0.71, +0.00708 (se 0.00021), G2 PASS; B2 beats B1 by >= 0.0003, so B2 is the V7 candidate. release.json sha256 1f135bde2cf24327cd39d7e28fdc80f224bc423f852c94f14d1a01e61a83b7df",
+      "g3": {
+        "audit_s1": 220682,
+        "v6_macro_f05": 0.97089,
+        "v7_b2_macro_f05": 0.97809,
+        "gain": 0.0072,
+        "se": 0.00014,
+        "result": "PASS",
+        "release_sha256": "1f135bde2cf24327cd39d7e28fdc80f224bc423f852c94f14d1a01e61a83b7df",
+        "audit_survivors": "shared/er-v7-20260927/audit-survivors (220,682 S1, 1,084,336 pairs, 3,945 zero-survivor S1, labels not read during extraction)",
+        "note": "one pre-registered look after V6's audit; V6 reproduced exactly"
+      }
     },
     {
       "task_id": "S2-INPUT-GATE-ABD",

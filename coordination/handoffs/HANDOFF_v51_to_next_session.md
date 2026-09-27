@@ -192,6 +192,50 @@ per task handles placement automatically.
 - `shared/er-v5-20260927/`: the v5 baseline run, **plus the home prefix for code and control**.
 - `shared/er-v5-bench1/`: retrieval benchmark results (`bench/bench-India.json`, `bench-US.json`).
 
+### 4.6 Running in a different AWS account (e.g. a teammate's account with its own credits)
+
+Nothing in the pipeline is tied to account 580857071542. Steps for a new account (region
+ap-south-1 is simplest; any region works if you set `AWS_REGION` and pass `--region`):
+
+1. **Check quotas first:** `aws service-quotas list-service-quotas --service-code sagemaker` and look at
+   "Total number of notebook instances" and "ml.<type> for notebook instance usage". New accounts
+   often allow fewer instances. Request increases early, because approval can take hours. Larger
+   notebook types (for example `ml.r7i.4xlarge`, 16 vCPU and 128 GB) help training, if the quota allows them.
+2. **Create a bucket and an execution role.** The role needs `AmazonSageMakerFullAccess` plus read/write
+   on the bucket; the SageMaker console's "create role" helper is enough. Creating IAM roles changes security
+   settings, so the account owner must do it or approve it.
+3. **Copy the artifacts instead of rebuilding them (saves about 2 h).** The account owner adds this
+   bucket policy on the **new** bucket, letting the old account write one prefix:
+   ```json
+   {"Version": "2012-10-17", "Statement": [{"Effect": "Allow",
+     "Principal": {"AWS": "arn:aws:iam::580857071542:root"},
+     "Action": ["s3:PutObject", "s3:ListBucket"],
+     "Resource": ["arn:aws:s3:::NEW_BUCKET", "arn:aws:s3:::NEW_BUCKET/shared/*"]}]}
+   ```
+   Then, with credentials for the **old** account, run a server-side copy (no local download):
+   ```bash
+   aws s3 sync s3://amazon-sagemaker-580857071542-ap-south-1-dn0trrxacr3ddt/shared/er-v51-20260927/ s3://NEW_BUCKET/shared/er-v51-20260927/ --exclude "score/*" --exclude "final/*" --exclude "claims/*" --exclude "logs/*" --region ap-south-1
+   aws s3 sync s3://amazon-sagemaker-580857071542-ap-south-1-dn0trrxacr3ddt/shared/er-v51c-20260927/ s3://NEW_BUCKET/shared/er-v51c-20260927/ --region ap-south-1
+   aws s3 cp s3://amazon-sagemaker-580857071542-ap-south-1-dn0trrxacr3ddt/shared/entity-v4-job-20260927/input/student_resource.zip s3://NEW_BUCKET/shared/input/student_resource.zip --region ap-south-1
+   ```
+   `feat/` (about 20 GB) is the valuable part: it holds all 92 features for 510k train and 1.73M test
+   queries with every retrieved candidate. `model/` holds the released model and tune scores. Keep the
+   prefix names, so `source_prefix` values stay valid. Remove the bucket policy afterwards.
+   Buckets created with "bucket owner enforced" (the default) make the new account own the copies.
+4. **Point the deploy scripts at the new bucket:** in `deploy/onstart.sh` set `BUCKET` (and `PREFIX` if
+   you want another home prefix). In `deploy/bootstrap.sh` the defaults are `ER_BUCKET`, `ER_PREFIX` and
+   `ER_DATA_KEY`; set them to the new bucket and `shared/input/student_resource.zip`. Everything else takes
+   `--bucket/--prefix` arguments. Use the new bucket in `tools/*.py` (the `B = ...` constants).
+5. **Create the lifecycle config and instances:**
+   ```bash
+   aws sagemaker create-notebook-instance-lifecycle-config --notebook-instance-lifecycle-config-name er-worker --on-start Content=$(base64 -w0 deploy/onstart.sh) --region ap-south-1
+   aws sagemaker create-notebook-instance --notebook-instance-name er-r7i --instance-type ml.r7i.2xlarge --role-arn <ROLE_ARN> --lifecycle-config-name er-worker --volume-size-in-gb 80 --platform-identifier notebook-al2023-v1 --region ap-south-1
+   ```
+   Repeat for each instance type the quota allows. Give at least one worker 60 GB or more for training and
+   final assembly. Upload `code/code.tar.gz` and `code/bootstrap.sh` (LF line endings) to the home prefix
+   **before** you start the instances, and write `control/queues`.
+6. Bucket encryption: the code always sends `ServerSideEncryption=AES256`, which works on any bucket.
+
 ---
 
 ## 5. Speed playbook

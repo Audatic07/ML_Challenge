@@ -1,0 +1,7 @@
+{
+  "original_tune_queries": 100000,
+  "original_locked_audit_queries": 220682,
+  "intersection": 0,
+  "audit_labels_evaluated": false,
+  "method": "reconstructed original seed-42 audit row reservation; no audit predictions or labels scored"
+}

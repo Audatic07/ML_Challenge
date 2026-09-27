@@ -1,0 +1,38 @@
+{
+  "session": "v51-improve-20260927-0820",
+  "scope": "private local feature rebuilding and second-stage model comparison; no shared edits, commits or pushes",
+  "source_reference": "db4056b04647948c307a93ca988534a21d06f5ee",
+  "candidate_policy": {
+    "top_k": 16,
+    "floor": 0.0001
+  },
+  "partition_seed": 27092026,
+  "partitions": {
+    "fit": 65000,
+    "stop": 10000,
+    "calibrate": 10000,
+    "check": 15000
+  },
+  "audit": "closed",
+  "models": [
+    "LightGBM",
+    "XGBoost"
+  ],
+  "selection": "calibrate only; check once after winner is frozen",
+  "paid_compute": false,
+  "status": "bounded local comparison complete; selected model frozen; 0.98 and 0.99 targets not attained",
+  "variants": [
+    "lightgbm",
+    "xgboost",
+    "lightgbm_reverse",
+    "xgboost_reverse"
+  ],
+  "reverse_feature_policy": "exact normalized name/address/skeleton keys over all supplied S1; no labels; cap 20 postings per key",
+  "shared_files_modified": false,
+  "published_claim": false,
+  "github_commits_or_pushes": false,
+  "selected_model": "ensemble:lightgbm_reverse:xgboost_reverse",
+  "reserved_check_macro_f05": 0.9764708106891286,
+  "running_jobs_owned_by_session": [],
+  "next_action": "Preserve this incumbent. Further experiments need a new evaluation protocol; full test delivery additionally needs full-union test score shards."
+}

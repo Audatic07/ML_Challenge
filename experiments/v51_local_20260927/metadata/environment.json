@@ -1,0 +1,17 @@
+{
+  "python": "3.14.2",
+  "packages": {
+    "polars": "1.44.2",
+    "numpy": "2.4.1",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.2.0",
+    "rapidfuzz": "3.14.6",
+    "pytest": "9.0.2"
+  },
+  "hardware": "Local Windows; 4 physical / 8 logical CPU; training limited to 3 threads",
+  "model_licenses": {
+    "lightgbm": "MIT; verified installed license text",
+    "xgboost": "Apache-2.0"
+  },
+  "pretrained_weights_added": false
+}

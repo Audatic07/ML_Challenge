@@ -1,0 +1,2 @@
+# Preserve exact archived experiment bytes so recorded SHA-256 values stay valid.
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

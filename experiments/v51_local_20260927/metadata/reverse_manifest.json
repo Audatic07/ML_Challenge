@@ -1,0 +1,8 @@
+{
+  "method": "label-free exact normalized name/address/skeleton keys over complete S1 population; max 20 postings per key; top alternatives by multiple similarities",
+  "population_rows": 2206821,
+  "target_rows": 770082,
+  "seconds": 187.75418079999872,
+  "external_data": false,
+  "labels_used_as_features": false
+}

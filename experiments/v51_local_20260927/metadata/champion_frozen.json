@@ -1,0 +1,34 @@
+{
+  "champion": {
+    "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+    "policy": "expected_f05",
+    "bias": -0.3,
+    "temperature": 1.0,
+    "macro_f05": 0.9768187093447704
+  },
+  "calibration_sha256": "3383e15634765790e8a4edb259685decafe062df6438e902fb81a1067b14f6a2",
+  "queries_sha256": "938b10a88cfc17fe9a40cde9898f9b678e7a8bc3569eaefeafe5ee5f102413c9",
+  "candidate_policy": {
+    "top_k": 16,
+    "floor": 0.0001
+  },
+  "selection_code_sha256": "a6361d02bdff5a00239aabdb247299b8dfbedc67e996692fc07a2ea45e01f666",
+  "models": {
+    "lightgbm": {
+      "file": "lightgbm.txt",
+      "sha256": "e6b22ca439df88d7e7e753cdba82e589eef483a0831080a14bc48567d2d00fa8"
+    },
+    "lightgbm_reverse": {
+      "file": "lightgbm_reverse.txt",
+      "sha256": "527a55c27ad3adbc8d6084029691f91a387afb1e10ac105c0169da9b3f113f9f"
+    },
+    "xgboost": {
+      "file": "xgboost.ubj",
+      "sha256": "e684c4bbf6fc9acd8705ad612a549da557ee05ee67768efb0d046843c7d9cd2e"
+    },
+    "xgboost_reverse": {
+      "file": "xgboost_reverse.ubj",
+      "sha256": "05b92ef9bb3cb8ab79cdfa954c8db37ea1bda671abc024db5e50168c635507a8"
+    }
+  }
+}

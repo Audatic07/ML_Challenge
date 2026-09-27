@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 21,
+  "epoch": 22,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T10:22:28.104544+00:00",
+  "updated_at": "2026-09-27T10:50:03.312329+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -15,13 +15,17 @@
         "tune_macro_f05": 0.97061,
         "candidates_per_s1_tune": 4.91,
         "candidates_per_s1_test": 5.35,
-        "partition": "fixed 100k tune; audit evaluation pending (once, champion only)",
+        "partition": "fixed 100k tune for all choices; audit evaluated once for the champion only",
         "queue": "shared/er-v6ens3-20260927",
         "ensemble_id": "d0fa7781e62a1a4226d7b9e40fe2ad65529db2af5503766b2691ace0a186ff63",
         "matching_results_sha256": "3f69fe5b983dc1407acfa3a45fb55dc59fce8a3d334f153961d0868521715f09",
         "candidate_pairs_sha256": "9c438703e605ac9d5fc4c0931b1c2272743054e75aeeb019b95891a2c83a9872",
         "validator": "official validator PASS --check-ids (worker and local); local structural checks pass",
-        "status": "release candidate; not packaged yet; not submitted"
+        "status": "packaged, not submitted",
+        "audit_macro_f05": 0.97089,
+        "audit_queries": 220682,
+        "audit_release_f05": 0.96082,
+        "audit_v51_same_cut": 0.96824
       }
     }
   },
@@ -145,11 +149,11 @@
       ],
       "base_sha": "db4056b (codex/stage2-claude-20260927-1130)",
       "created_at": "2026-09-27T08:56:21.180461+00:00",
-      "next_checkpoint": "one-time audit (v6audit-ens3, thresholds fixed from tune), then package C:/Ml_challenge_submission_v6 (fallback zip untouched)",
+      "next_checkpoint": "user/portal operator decides on AML_submission_v6.zip; claim held for follow-up",
       "deliverable": "v6 LightGBM trained on v5.1 stage-1 survivors (top-20 by v5.1 p on fit), reusing shared/er-v51-20260927/feat; tune F/U/candidates per cut policy vs v5.1 at the same cut; test survivor scores + final TSVs in the v5.1 score format so stage-2 work can consume them",
       "not_touched": "src/v6_stage2.py, tools/v6_analysis/ (stage-2 path stays with its own owner)",
-      "code_sha": "42714bb",
-      "checkpoint_at": "2026-09-27T10:05:54.300558+00:00",
+      "code_sha": "60ec04d",
+      "checkpoint_at": "2026-09-27T10:50:03.312329+00:00",
       "result": "champion = mean of 3 survivor-trained LightGBMs; tune 0.97061 at 4.91 cand/S1 (cut top 12, v5.1 p>=0.01), threshold 0.72; v5.1 same cut 0.96794"
     },
     {
@@ -460,14 +464,14 @@
     },
     {
       "id": "V6-TRAIN",
-      "status": "claimed",
+      "status": "review",
       "owner_session": "claude-20260927-1420",
       "depends_on": [],
       "optional": true,
       "summary": "Survivor-specialist v6 LightGBM on v5.1 cascade survivors (feature reuse via source_prefix); final scorer of the survivor candidate set",
-      "code_sha": "42714bb",
+      "code_sha": "60ec04d",
       "evidence": [
-        "coordination/evidence/v6-train/claude-20260927-1420.md on codex/v6-train-claude-20260927-1420 (300c3e9)"
+        "coordination/evidence/v6-train/claude-20260927-1420.md on codex/v6-train-claude-20260927-1420 (60ec04d)"
       ]
     },
     {
@@ -590,7 +594,7 @@
       "data": "provided dataset only; existing private bucket; reads shared/er-v51-20260927/{feat,score,model} read-only",
       "output_s3_prefix": "shared/er-v6-20260927/ (home prefix of this worker via control/prefix-er-v5-r7i)",
       "shutdown": "control/stop + control/stop-instances in the v6 home prefix (worker exits after its task, bootstrap stops the instance); fallback aws sagemaker stop-notebook-instance",
-      "status": "running",
+      "status": "completed; all 8 notebook instances stopped 2026-09-27T10:47Z; prefix overrides removed",
       "created_at": "2026-09-27T08:56:21.180461+00:00",
       "authorization": "User in chat 2026-09-27 14:20 IST: 'You can start training the improvement of v5.1, the v6 model.'",
       "job_started_at_utc": "2026-09-27T09:04:42Z",
@@ -607,7 +611,17 @@
         "basis": "User in chat: finish training as fast as possible, speed over cost",
         "prefix_overrides": "shared/er-v5-20260927/control/prefix-er-v5-* -> shared/er-v6-20260927 (remove after the job)"
       },
-      "estimated_rate_usd_per_hour": 4.5
+      "estimated_rate_usd_per_hour": 4.5,
+      "completed_at_utc": "2026-09-27T10:47:17Z",
+      "estimated_cost_usd": 7,
+      "queues": [
+        "shared/er-v6-20260927",
+        "shared/er-v6s7-20260927",
+        "shared/er-v6l127-20260927",
+        "shared/er-v6ens3-20260927",
+        "shared/er-v51-audit-20260927",
+        "shared/er-v6-audit-20260927"
+      ]
     },
     {
       "job_id": "er-v6s2-smoke-akash-20260927",
@@ -705,6 +719,24 @@
       "validator": "official validator PASS (--check-ids in cloud; local on extracted files)",
       "portal_submission": "not submitted by agents; user/portal operator",
       "evidence": "coordination/evidence/v5-dist/release/"
+    },
+    {
+      "package": "AML_submission_v6.zip (local, C:/Ml_challenge_submission_v6)",
+      "zip_sha256": "7d66db4163f24c674282e1b94aa866c190f94b6532f7d1caec55ea88e98f0778",
+      "zip_bytes": 101850527,
+      "matching_results_sha256": "3f69fe5b983dc1407acfa3a45fb55dc59fce8a3d334f153961d0868521715f09",
+      "candidate_pairs_sha256": "9c438703e605ac9d5fc4c0931b1c2272743054e75aeeb019b95891a2c83a9872",
+      "candidate_pairs": 9266800,
+      "candidates_per_s1": 5.35,
+      "tune_macro_f05": 0.97061,
+      "audit_macro_f05": 0.97089,
+      "threshold": 0.72,
+      "cut": "v5.1 top 12, p >= 0.01",
+      "model": "mean of 3 survivor-trained LightGBMs (ensemble id d0fa7781...)",
+      "validator": "official validator PASS (--check-ids on worker and locally; package and extracted zip)",
+      "portal_submission": "not submitted by agents; user/portal operator",
+      "fallback": "AML_submission.zip unchanged (c00693f4...)",
+      "evidence": "coordination/evidence/v6-train/claude-20260927-1420.md on codex/v6-train-claude-20260927-1420 (60ec04d)"
     }
   ]
 }

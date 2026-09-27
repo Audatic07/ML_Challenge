@@ -1,13 +1,17 @@
 {
   "schema_version": 2,
-  "epoch": 8,
+  "epoch": 9,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-26T23:46:09.857777+00:00",
+  "updated_at": "2026-09-27T04:38:37Z",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
-    "verified_score": null
+    "verified_score": {
+      "tune_macro_f05": 0.9605,
+      "partition": "fixed 100k tune, audit unopened",
+      "release": "v5.1 + stage-1 top-30 (combo+combo_word cosine)"
+    }
   },
   "contract_version": "2.0-proposed",
   "contract_accepted": false,
@@ -81,7 +85,7 @@
       ],
       "base_main_sha": "e1502f6",
       "created_at": "2026-09-26T22:21:31Z",
-      "next_checkpoint": "v5 and v5.1 train tasks: tune macro F0.5 and oracle U; then test scoring",
+      "next_checkpoint": "release package handed to the portal operator",
       "deliverable": "Distributed v5 retrieval+features+LightGBM on SageMaker notebook instances; tune metrics; test TSVs"
     },
     {
@@ -358,7 +362,7 @@
       "data": "provided dataset only; existing private SageMaker bucket (SSL-only policy, SSE-S3)",
       "s3_prefix": "s3://amazon-sagemaker-580857071542-ap-south-1-dn0trrxacr3ddt/shared/er-v5-20260927/",
       "training": "fit=400000, stop=10000 (perm[300000:310000]), tune=100000 (perm[200000:300000]); audit unopened; full train and test catalogs",
-      "status": "running",
+      "status": "completed; all notebook instances stopped",
       "created_at": "2026-09-26T22:21:31Z",
       "job_started_at_utc": "2026-09-26T22:26:27Z",
       "notebook_instances": [
@@ -375,13 +379,14 @@
       "lifecycle_config": "er-v5-worker",
       "source_code": "codex/v5-dist-claude-20260927 (code.tar.gz in s3 prefix code/)",
       "plan": "205 tasks: 115 feat (train 510000 rows, test 1732544 rows), train, 88 score, final",
-      "source_code_sha": "87298e0 (codex/v5-dist-claude-20260927)",
+      "source_code_sha": "ad291a7 (codex/v5-dist-claude-20260927)",
       "queues": [
         "shared/er-v5-20260927 (v5 baseline)",
         "shared/er-v51-20260927 (v5.1)",
         "shared/er-v5-bench1 (retrieval benchmark, done)"
       ],
-      "evidence": "coordination/evidence/v5-dist/claude-20260927-0340.md on the task branch"
+      "evidence": "coordination/evidence/v5-dist/claude-20260927-0340.md on the task branch",
+      "completed_at_utc": "2026-09-27T04:38:37Z"
     }
   ],
   "submission_history": [],
@@ -423,5 +428,19 @@
     "Git authentication and agreed publication destination when publishing",
     "Actual AWS balances and authorization before paid jobs",
     "Designated portal access and eligibility confirmation"
+  ],
+  "releases": [
+    {
+      "package": "AML_submission.zip (local, C:/Ml_challenge_submission)",
+      "zip_sha256": "c00693f465fba557fa38ab46a226a58da4abddd6e954b44194025a59348dfe0d",
+      "matching_results_sha256": "e37976e7aca557be9e5fed58fef153228bef2fd1aa043572a3b87ea2433e38e2",
+      "candidate_pairs": 51976320,
+      "candidates_per_s1": 30,
+      "tune_macro_f05": 0.9605,
+      "threshold": 0.72,
+      "validator": "official validator PASS (--check-ids in cloud; local on extracted files)",
+      "portal_submission": "not submitted by agents; user/portal operator",
+      "evidence": "coordination/evidence/v5-dist/release/"
+    }
   ]
 }

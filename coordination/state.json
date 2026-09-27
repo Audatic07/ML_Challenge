@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 26,
+  "epoch": 27,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T12:12:32.559996+00:00",
+  "updated_at": "2026-09-27T12:14:45.623632+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -188,7 +188,8 @@
         "at": "2026-09-27T16:50:31.824088+05:30",
         "basis": "Akash's written handoff relayed by Abhigyan; paths released on recording"
       },
-      "published_smoke_commit": "a35aead: code files identical to Akash's verified tree f32eb112; the published tree 14e5d7ad differs by one line in his evidence note only"
+      "published_smoke_commit": "a35aead: code files identical to Akash's verified tree f32eb112; the published tree 14e5d7ad differs by one line in his evidence note only",
+      "access_note": "Read access to the ens3 plan/manifest, member tune_scores and score shards is live (see V7-PLAN-REV3-20260927)."
     },
     {
       "task_id": "S2-INPUT-GATE-ABD",
@@ -772,7 +773,7 @@
       "decision": "V7 plan revision 3 on main 2e00a5c supersedes revision 2's protocol: 5-fold cross-fitting on all 100k tune S1, deploy the 5-fold mean, one pre-registered audit comparison (G3); no D/C split or refit; test/audit features cached at the feature freeze; label-free France routing to V6 decisions; monotone constraints on p6/v5.1 p; expected-F, F2 and member spread dropped today. Work packages WP1-WP3 are unowned; any agent may claim them.",
       "technical_plan": "output/hackathon/V7_FINAL_ITERATION_PLAN.md at 2e00a5c",
       "fallback": "AML_submission_v6.zip kept ready, SHA-256 re-verified 7d66db41... at 17:40 IST; no portal upload now; V6 is uploaded if V7 misses its gates by the cutoff",
-      "access": "AMLV7Team* bucket statements prepared for the Abhigyan and Akash SageMaker roles (read V6/audit/er-v7 prefixes, write shared/er-v7-20260927/, until 2026-09-28T00:00Z); applied by the account owner, not by an agent",
+      "access": "Applied by the account owner and verified live at 2026-09-27T12:14Z: statements AMLV7TeamReadV6V7, AMLV7TeamListV6V7, AMLV7TeamWriteV7 for roles SageMakerExecutionRole-AMLChallenge-Abhigyan (548171705578) and AmazonSageMaker-ExecutionRole-20260926T152784 (368083580896). Read: shared/er-v6ens3-20260927/, shared/er-v6-20260927/, shared/er-v6s7-20260927/, shared/er-v6l127-20260927/, shared/er-v51-audit-20260927/, shared/er-v7-20260927/. Write: shared/er-v7-20260927/ only. Expires 2026-09-28T00:00:00Z. Existing v5.1 grants unchanged.",
       "at": "2026-09-27T12:12:32.559996+00:00"
     }
   ],

@@ -1,3 +1,5 @@
+> Historical bootstrap plan. The current implementation/training specification is [V7 final iteration plan](V7_FINAL_ITERATION_PLAN.md). V6 and stage-two code now exist on main; the original no-model/no-code status and startup schedule below describe 26 September, not the current state. Read the current plan and live control branch before acting.
+
 # Sol implementation plan: pursue 0.98 macro F0.5
 
 **Decision date:** 26 September 2026, approximately 20:00 IST. **Official close:** 27 September, 23:59 IST. **Internal acceptance deadline:** 27 September, 21:30 IST. Recalculate the remaining time when execution starts; approximately 28 hours remained at research time. This replaces the earlier fixed-role plan and its September 25 schedule.

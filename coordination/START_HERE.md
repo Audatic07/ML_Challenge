@@ -1,39 +1,13 @@
-# Start immediately; contribute wherever useful
+# Start from consolidated main and the current V7 plan
 
-The current plan is [Sol implementation plan](../output/hackathon/SOL_IMPLEMENTATION_PLAN.md).
-Give any available coding agent [the same startup prompt](prompts/SOL_START.md).
-The fastest session may implement the entire critical path. Other sessions take ready,
-nonoverlapping tasks; there is no fixed division by person and no equal-work requirement.
+1. Read [V7 final implementation and training plan](../output/hackathon/V7_FINAL_ITERATION_PLAN.md). The [Sol plan](../output/hackathon/SOL_IMPLEMENTATION_PLAN.md) supplies background rules; its initial build schedule and no-code status are historical.
+2. Fetch origin, then read coordination/state.json from origin/codex/control. The copy on main is a historical seed, not the live board.
+3. Read [PROTOCOL.md](PROTOCOL.md), [CONTRACTS.md](CONTRACTS.md), the [branch map](BRANCH_CONSOLIDATION.md) and evidence for your exact inputs.
+4. Use one isolated writing checkout and a unique session/task branch. Claim bounded paths and any integration/job work through a normal serialized control-branch push. Preserve active claims; a planning revision does not transfer another writer's files.
+5. Work only within the current user's authorization. This review was planning/consolidation only. Implementation, training, cloud resources and portal interaction belong to the separately authorized execution workflow.
 
-1. The first session inspects the workspace, preserves existing work and begins P00/P01.
-   Do not wait for the other three operators to arrive.
-2. Each additional session uses its own clone/worktree and unique session ID. It reads
-   shared state and claims an unclaimed task or a concrete subtask from the current worker.
-3. Publish code and small metadata to the agreed Git destination. Until publishing/access
-   is available, one local writer may progress; other sessions can perform independent
-   read-only reviews or prepare work in isolated directories without overlapping claims.
-4. Use the normal-Git claim protocol in `PROTOCOL.md`. Code lives on task branches;
-   canonical task state lives on `codex/control`. No additional agent platform is required.
+Published V6 is the fallback (reported audit 0.97089). Canonical code is under code/business_entity_resolution/. Published experiments are preserved under experiments/. Do not compare scores from different query cohorts or candidates as if they were the same evaluation.
 
-```text
-Sol / Claude / any available session
-             |
-        claim ready work <----> shared queue on codex/control
-             |
-      implement + measure ----> exact-SHA evidence
-             |
-      brief integration claim -> tested main -> next highest-value task
-```
+The V7 plan defines R0-R8 and its acceptance gates. Earlier P00-P11 entries can be stale; inspect actual evidence before claiming work. No fixed A/B/C/D roles, equal-contribution requirement or need to wait for every account.
 
-The current `state.json` is a seed, with no actual claims, remote publication, models or
-cloud jobs. The claim protocol is documented; no new automation daemon/helper is claimed
-to be implemented. Agents can execute it with ordinary Git. Timebox coordination setup
-to 20 minutes and keep local model work moving.
-
-The repository configured as origin was observed public. Use authorized private storage
-for data, prediction TSVs and trained artifacts. Do not change visibility or publish to a
-different destination without an agreed choice. Keep ordinary tool permissions intact.
-
-All old role prompts and fixed-role helper/tests are retained in `legacy_fixed_roles/` as
-history. The older PDF is also historical; the current executable specification is the
-Markdown plan above. The retired helper will refuse execution rather than revive roles.
+Use the [current handoff prompt](prompts/SOL_START.md) when handing work to the execution teammate. The public repository carries source and aggregate metadata only; private data/models/scores remain in authorized private storage. Files do not start another session or authorize spending.

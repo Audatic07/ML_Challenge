@@ -39,32 +39,69 @@ Do not combine the 0.97052 result with the 6.67 candidate count until the same r
 4. Missing shards / stale outputs: fail a manifest check rather than silently evaluate a partial population.
 5. Candidate-count interpretation: disclose broad first-stage scoring as well as final survivors; keep fallback if clarification remains unresolved.
 
-## Ownership: proposed, confirm actual work before claiming
+## Execution model: shared tasks, flexible owners, serialized integration
 
-| Teammate | Bounded ownership | Deliverable |
+This section replaces the earlier person-by-person role split. Aditya, Akash, Aadish and Abhigyan contribute account access, approved compute and agent sessions to ONE solution. No person owns a permanent subject area. Any ready, capable agent may execute any unclaimed bounded task, including multiple tasks on the critical path.
+
+- Maintain one agreed task list using the existing coordination protocol; this is a human/agent coordination queue, not a new automatic scheduler spanning AWS accounts.
+- Before starting, record task ID, owner session, exact code SHA, input manifest, command/configuration, required RAM, account/worker, output prefix, success checks and authorized cost/runtime. A cloud job reservation must be confirmed before launching to avoid duplicate runs.
+- Account owners provide access and spending approval. The execution agent need not be the person who owns the account, but must have authorized access; never exchange credentials.
+- Use suitable available machines across accounts for independent experiments or existing supported shards. Do not attempt to merge machine RAM or assume the current worker can run a new v6 task type without integration.
+- Only one writer owns a claimed code path. Other agents can independently review and report findings. Transfer a task explicitly before another writer takes it; a delayed reply is not proof of abandonment.
+- Nominate one integration owner at a time under a short release claim. That owner combines tested changes, freezes the champion and produces the package. Do not have four agents independently rewrite the pipeline or final submission.
+- Preserve active work and confirm current jobs before assigning anything. Do not make useful local tests, analysis or training on a ready account wait for all four setups or Abhigyan's quota approval.
+- Completed work reports include code SHA, exact policy, input hashes, metric/coverage checks, runtime, output location and remaining issues. Record failures too so another account does not repeat an invalid run.
+
+| Ready work item | Capability needed | Handoff result |
 |---|---|---|
-| Aditya | Stage2 training and exact-policy comparison after core fixes | Frozen model/config + OOF report |
-| Akash | Small/empty-set implementation fixes and final survivor policy integration | Passing edge cases + deterministic policy |
-| Aadish | Independent metric/reproduction review, France and ownership checks | Findings and validation report |
-| Abhigyan | Account/artifact inventory, transfer coordination, release integration | Verified inputs + final manifest/package |
+| Artifact inventory/access | Authorized storage access; no training machine required | Verified manifests and inputs |
+| Small/empty survivor fixes | Existing local test environment | Tested code revision |
+| Exact-policy OOF comparison | Measured adequate RAM/CPU and input access | Comparable predictions and metrics |
+| Independent checks | Separate reviewer, relevant artifacts | Findings and metric agreement |
+| Reverse retrieval, optional | Suitable high-memory worker, approved budget | Measured gain or documented rejection |
+| Final integration/release | One nominated release writer | Frozen validated package |
 
-Existing active tasks take precedence; obtain explicit transfers before touching another owner's files. Aadish may author independent tests, but nominate one writer to integrate each shared module. Four contributors does not require four active paid machines.
-
-## Task 1: freeze inputs and coordinate artifacts (Abhigyan)
+Owners are assigned through current claims, not by this table. Extra accounts are used where they shorten the critical path; idle compute is stopped.
+## Task 1: freeze inputs and coordinate artifacts (claimed session)
 
 **Files:** coordination state/evidence through the team's authorized publisher; private run manifest in S3. No source edits needed.
 **Consumes:** current account/bucket/role identifiers, db4056b and v5.1 artifact manifests.
 **Produces:** one agreed artifact inventory and owner per task.
 
-- [ ] Collect from Aditya and Akash: account ID, Mumbai bucket, role/principal for access, current code SHA, exact running task, instance types/count/status and output prefix. Collect Aadish's environment and required inputs; do not demand a full account setup for read-only analysis.
+- [ ] Collect current environment and approved capacity from all four participants: account/bucket/role where applicable, code SHA, active task, worker status/RAM and output prefix. Keep exact account-access details in the private coordination notes. Do not demand cloud setup for work that can run locally.
 - [ ] Preserve existing plan.json, model/model_manifest.json, model/tune_scores.parquet and all 88 full-union score/ test shards under shared/er-v51-20260927/. Retain feat/ only where the assigned experiment requires it and retain the cascade fallback artifacts separately.
 - [ ] Correct the OLD handoff copy recipe: its score/* exclusion is wrong for these v6 analysis scripts. Arrange scoped access or copy the required score shards, not a needless feature rebuild.
 - [ ] Record source keys, sizes, available checksums, dataset identity and code SHA. Confirm 88 distinct expected test shard keys, disjoint intended S1 ranges and aggregate 1,732,544 test queries. The reported full-union test pair count is 443,792,782; investigate mismatch instead of silently accepting partial data.
 - [ ] Give each experiment a unique output prefix and immutable configuration. Do not reuse worker control queues by copying Aditya's startup defaults unchanged.
 
+### Updated source inventory and access checkpoint
+
+Source owner reports the temporary grant is live, including score/. This is an owner-reported policy check, not successful recipient-side access or transfer. Exact bucket and role ARNs are in the private account handoff / Desktop AD_Known.md; do not publish credentials or signed URLs.
+
+| Source under the known private bucket | Objects | Reported size |
+|---|---:|---:|
+| shared/er-v51-20260927/feat/ | 115 | 62.48 GB |
+| shared/er-v51-20260927/model/ | 4 | 0.38 GB |
+| shared/er-v51-20260927/plan.json | 1 | 2 MB |
+| shared/er-v51-20260927/score/ | 88 | 5.82 GB |
+| shared/er-v51c-20260927/ | 377 | 1.50 GB |
+| shared/entity-v4-job-20260927/input/student_resource.zip | 1 | 1.09 GB |
+
+Total reported size is approximately 71.3 GB; the earlier approximately 20 GB feature estimate is superseded. Confirm exact keys/bytes from the source manifest; use reported counts as checks, not a substitute for identity and completeness verification.
+
+The grant names Abhigyan's exact execution role and permits object reading, prefix listing and bucket-location lookup. Its time condition ends at 2026-09-28 00:00 UTC (05:30 IST); the owner offered earlier removal after successful copying. Expiry ends access but does not necessarily delete the policy statements.
+
+- [ ] Confirm recipient policy cleanup is completed (the prior Task 2 message said After removal), then add only necessary source-read/list permissions to the recipient role with user authorization. Source bucket permission alone does not establish effective cross-account access.
+- [ ] Confirm the identity actually performing the transfer. A console/CLI session is not automatically the SageMaker execution role. Do not launch training merely to test permissions or broaden role trust without review.
+- [ ] Test listing the permitted prefix and reading the small plan.json. Confirm encryption and any KMS authorization with the source owner; a listing success alone does not prove object decryption access.
+- [ ] For v6 analysis, prioritize plan.json, model/, score/ and required dataset access. feat/ is required only for tasks that consume it; preserve access to it without forcing every participant to copy 62.48 GB.
+- [ ] Prefer an authorized S3-to-S3 copy for artifacts that need a recipient copy; do not stage all 71.3 GB on a small notebook volume. Keep buckets private and use only agreed source paths with correct trailing slashes for prefixes.
+- [ ] Verify destination keys, counts, sizes and available checksums, and read representative files before reporting success. Do not use multipart ETag as a universal MD5 checksum. Record the exact agreed copied subset; do not tell the owner everything was copied if only selected inputs were transferred.
+- [ ] Confirm no running task still needs source reads before requesting grant removal. If only a subset was copied, explicitly agree revocation timing for the remaining artifacts.
+
 **Acceptance:** required inputs readable and inventoried; no paid machine needed to establish bucket permissions. Abhigyan's currently allowed 4 GiB notebooks are not approved for the full job; use teammates' suitable machines or verified local capacity while quota is pending.
 
-## Task 2: make the proposed shortlist executable (Akash, or current code owner)
+## Task 2: make the proposed shortlist executable (claimed code writer)
 
 **Modify:** code/business_entity_resolution/src/v6_stage2.py; tools/v6_analysis/expected_f.py.
 **Test:** code/business_entity_resolution/tests/test_v6_stage2.py.
@@ -97,7 +134,7 @@ python -m pytest tests/test_v6_stage2.py -q
 
 **Acceptance:** 0/1/2-survivor cases pass, no missing query rows, no dependency upgrades. These fixes were identified by static review here, not reproduced with installed runtime dependencies.
 
-## Task 3: compare exact policies and produce a model (Aditya)
+## Task 3: compare exact policies and produce a model (available qualified worker)
 
 **Files:** tools/v6_analysis/stage2_features.py, stage2_cv.py, expected_f.py; private outputs and evidence report.
 **Consumes:** validated Task 2 code and complete frozen score artifacts.
@@ -121,7 +158,7 @@ python tools/v6_analysis/expected_f.py s2_oof_K12_f0.001.parquet p2
 
 **Acceptance:** no claim of seven-candidate stage2 quality without direct measurement; reproducible saved model and reload check; audit unopened during selection.
 
-## Task 4: independent review and rule accounting (Aadish)
+## Task 4: independent review and rule accounting (independent reviewer)
 
 **Files:** tools/v6_analysis/_common.py, loss.py, test_checks.py and residuals.py (review existing logic first); separate evidence document. Coordinate any shared test changes with Task 2 owner.
 **Consumes:** exact-policy OOF predictions, full query/truth counts, stage1/stage2 scores and chosen configuration.
@@ -135,7 +172,7 @@ python tools/v6_analysis/expected_f.py s2_oof_K12_f0.001.parquet p2
 
 **Acceptance:** discrepancies resolved or disclosed before promotion; no audit-based model shopping.
 
-## Task 5: integrate, audit once, validate and hand off (Abhigyan + nominated release writer)
+## Task 5: integrate, audit once, validate and hand off (single release owner)
 
 **Files:** existing final assembly/validator/package tooling, release manifest and Documentation_template.md. Determine actual integration files after Task 3's inference entry point exists; do not assume the old v5 worker automatically executes v6.
 **Consumes:** frozen tested model/config, approved candidate interpretation and complete input manifest.
@@ -156,3 +193,4 @@ Reverse-retrieval competition features (src/v6_reverse.py) remain unproven and r
 ## Checks performed while preparing this plan
 
 All 13 added files at db4056b reviewed; 12 Python files syntax-parsed. Existing local runtime lacks Polars/RapidFuzz/LightGBM/pytest, so no unit tests or metric reproduction were run here and no packages were installed. Organizer clarification rows were reread. No cloud actions taken. Implementation remains pending; this document is a proposed revision for team review, not an implementation task claim.
+Revision: flexible execution replaces named roles; temporary source grant and owner-reported 71.3 GB inventory incorporated. Access/copy not yet verified by this session. Documentation update only.

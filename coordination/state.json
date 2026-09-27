@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 29,
+  "epoch": 30,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T12:49:12.176896+00:00",
+  "updated_at": "2026-09-27T12:58:59.980587+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -243,7 +243,9 @@
       "created_at": "2026-09-27T12:49:12.176896+00:00",
       "scope": "V7 plan revision 3 WP3: label-free lean audit survivors (v5.1 p1, fixed cut, V6 member mean) with a query ledger, and the one-time G3 evaluator; no audit labels read before G3",
       "next_checkpoint": "survivors code merged by the 18:55-19:05 freeze; extraction run on an assigned machine",
-      "deliverable": "tools/v7_audit.py survivors|gate plus a fixture test"
+      "deliverable": "tools/v7_audit.py survivors|gate plus a fixture test",
+      "code_sha": "3bc79e5",
+      "checkpoint_at": "2026-09-27T12:58:59.980587+00:00"
     }
   ],
   "integration_claim": null,
@@ -700,6 +702,25 @@
       "verification": "results as reported by the owner session; evidence published at a35aead",
       "result": "exit 0, 222.8 s wall, 6.51 GiB peak, 4 threads; no extra workers, no full inference",
       "studio_app": "stop was denied inside the session; the account owner stops it from the console (space and storage kept)"
+    },
+    {
+      "job_id": "er-v7-abhigyan-r7i4xl-20260927",
+      "owner_session": "claude-abhigyan-20260927-1600",
+      "account_alias": "abhigyan-sagemaker-ap-south-1",
+      "region": "ap-south-1",
+      "service": "SageMaker notebook instance, no lifecycle config",
+      "notebook_instance": "amlc26-s2-abd",
+      "instance": "ml.r7i.4xlarge",
+      "price_per_hour_usd": 1.31,
+      "price_source": "AWS Price List API ap-south-1, published 2026-09-27T02:52:30Z",
+      "authorized_job_spend_cap_usd": 6,
+      "maximum_runtime": "stop by 21:00 IST 2026-09-27; target finish 19:45 IST",
+      "status": "running",
+      "work": "V7 B1 gate (5-fold, WP2 code), lean audit survivors (WP3), then assigned test shards",
+      "output_s3_prefix": "shared/er-v7-20260927/ (Aditya's bucket)",
+      "shutdown": "outputs synced to S3, then console Stop (SageMaker AI > Notebook instances > Actions > Stop)",
+      "created_at": "2026-09-27T12:58:59.980587+00:00",
+      "authorization": "Abhigyan in chat ~18:30 IST: approved within the limits, to end early; submission wanted by 20:00 IST"
     }
   ],
   "submission_history": [],

@@ -32,6 +32,10 @@ ADDR_STOP = {
 
 _WEB = r"\b(www\.)|\.(com|net|org|in|co\.in|fr|biz|info)\b"
 
+# Look-alike digits typed for letters in Source 2/3 names (`mi1ler`, `8ozarth`, `br0thers`).
+# Measured on labelled pairs that blocking missed: 0->o, 1->l, 5->s, 6->g, 8->b.
+DIGIT_LETTER = {"0": "o", "1": "l", "5": "s", "6": "g", "8": "b"}
+
 
 def to_ascii(s: pl.Series) -> pl.Series:
     """Transliterate non-ASCII values (Devanagari, accents, ...) with unidecode.
@@ -56,6 +60,16 @@ def _drop_words(c: pl.Expr, words: set[str]) -> pl.Expr:
     return (c.str.split(" ")
             .list.eval(pl.element().filter((pl.element() != "") & ~pl.element().is_in(list(words))))
             .list.join(" "))
+
+
+def fix_digit_letters(c: pl.Expr) -> pl.Expr:
+    """Map look-alike digits to letters inside words that also contain a letter.
+    `mi1ler 8ozarth` -> `miller bozarth`. Pure numbers (`4515`, `9630615796`) are unchanged."""
+    fixed = pl.element()
+    for digit, letter in DIGIT_LETTER.items():
+        fixed = fixed.str.replace_all(digit, letter, literal=True)
+    mixed = pl.element().str.contains("[a-z]") & pl.element().str.contains("[0-9]")
+    return c.str.split(" ").list.eval(pl.when(mixed).then(fixed).otherwise(pl.element())).list.join(" ")
 
 
 def skeleton(c: pl.Expr) -> pl.Expr:
@@ -105,3 +119,23 @@ def normalise(df: pl.DataFrame) -> pl.DataFrame:
     house = pl.when(pl.col("postcode").is_not_null() & (h0 == pl.col("postcode"))).then(h1).otherwise(h0)
     df = df.with_columns(house.alias("house"))
     return df.drop("_n", "_a", "_nums")
+
+
+def derive(df: pl.DataFrame) -> pl.DataFrame:
+    """Recompute core, skel, concat and addr_tok from (mapped) name_norm / addr_norm.
+
+    Also removes phone-like digit runs (7+ digits) and repeated words from names and
+    maps look-alike digits inside words back to letters: all three are noise added to
+    Source 2/3 variants (`bay inc council 9630615796`, `metro metro`, `mi1ler`)."""
+    name = (fix_digit_letters(pl.col("name_norm")).str.replace_all(r"\b\d{7,}\b", " ").str.split(" ")
+            .list.eval(pl.element().filter(pl.element() != "")).list.unique(maintain_order=True)
+            .list.join(" "))
+    df = df.with_columns(name.alias("name_norm"))
+    df = df.with_columns(_drop_words(pl.col("name_norm"), LEGAL).alias("core"))
+    df = df.with_columns(_drop_words(skeleton(pl.col("core")), LEGAL_SKEL).alias("skel"),
+                         pl.col("core").str.replace_all(" ", "").alias("concat"))
+    addr_tok = (pl.col("addr_norm").str.split(" ")
+                .list.eval(pl.element().filter(pl.element().str.contains(r"^[a-z]{3,}$")
+                                               & ~pl.element().is_in(list(ADDR_STOP))))
+                .list.join(" "))
+    return df.with_columns(addr_tok.alias("addr_tok"))

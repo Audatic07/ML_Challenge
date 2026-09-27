@@ -1,0 +1,42 @@
+  numeric train J: 6,673,960 pairs (11s)
+  numeric train K: 11,119,682 pairs (28s)
+  numeric train L: 1,014 pairs (29s)
+blocking index 287s
+  blocking s1fit: 4,205,390 pairs (210.3/query), recall 0.9739, oracle U 0.9908
+  blocking train: 31,317,288 pairs (208.8/query), recall 0.9725, oracle U 0.9905
+  blocking val: 4,195,857 pairs (209.8/query), recall 0.9734, oracle U 0.9907
+  shortlist train top20: 2,911,351 pairs (19.4/query), recall 0.9703, oracle U 0.9898
+  shortlist train top30: 4,275,138 pairs (28.5/query), recall 0.9711, oracle U 0.9900
+  shortlist train top40: 5,582,089 pairs (37.2/query), recall 0.9713, oracle U 0.9901
+  shortlist train top60: 8,045,662 pairs (53.6/query), recall 0.9717, oracle U 0.9902
+  shortlist val top20: 388,346 pairs (19.4/query), recall 0.9710, oracle U 0.9900
+  shortlist val top30: 570,615 pairs (28.5/query), recall 0.9716, oracle U 0.9902
+  shortlist val top40: 745,229 pairs (37.3/query), recall 0.9720, oracle U 0.9904
+  shortlist val top60: 1,074,549 pairs (53.7/query), recall 0.9723, oracle U 0.9904
+shortlist stage 629s
+  features train done 391s
+  features val done 434s
+train rows 5,582,089, positives 503,223
+Training until validation scores don't improve for 75 rounds
+[250]	tune's binary_logloss: 0.0108866
+[500]	tune's binary_logloss: 0.00985788
+[750]	tune's binary_logloss: 0.00954141
+[1000]	tune's binary_logloss: 0.00939759
+[1250]	tune's binary_logloss: 0.00931225
+[1500]	tune's binary_logloss: 0.00928856
+Early stopping, best iteration is:
+[1439]	tune's binary_logloss: 0.00928204
+trained 1439 rounds in 1065s
+VAL tune 0.9746 | CHECK 0.9737 | all 0.9742 at threshold 0.72 (picked on tune) | candidate oracle U 0.9904
+VAL macro F0.5 0.9742 at threshold 0.72 | candidate oracle U 0.9904 | matching loss 0.0162
+shape: (2, 3)
+┌─────────┬───────┬──────────┐
+│ country ┆ len   ┆ f        │
+│ ---     ┆ ---   ┆ ---      │
+│ str     ┆ u32   ┆ f64      │
+╞═════════╪═══════╪══════════╡
+│ India   ┆ 7974  ┆ 0.968763 │
+│ US      ┆ 12026 ┆ 0.977739 │
+└─────────┴───────┴──────────┘
+top gain: ['p1', 'nm_true_extra_max', 'bscore', 'num_t_in_q', 'h_absdiff', 'num_jac', 'nm_extra_max', 'nm_extra_idf', 'num_q_in_t', 'g_same_house', 'n_tsort', 'ntok_r', 'n_len2', 'n_partial', 'sk_ratio', 'h_prefix', 'g_same_core_badaddr', 'cc_partial', 'nm_true_extra', 'n_ratio', 'a_tset_rank', 'g_same_core', 'a_partial', 'ad_cov_q', 'num_jac_rank']
+exit 0

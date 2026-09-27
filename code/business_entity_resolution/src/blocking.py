@@ -33,6 +33,24 @@ def _rarest(df: pl.DataFrame, col: str, dfreq: pl.DataFrame, n: int) -> pl.DataF
     return toks
 
 
+NUMERIC = [("J", "skel", "house"), ("K", "addr_tok", "house"), ("L", "skel", "postcode")]
+
+
+def numeric_postings(df: pl.DataFrame, tag: str, tok: str, num: str, batch: int = 1_000_000) -> pl.DataFrame:
+    """(row, key) postings, one key per (country, number, token) for tokens of length >= 2.
+
+    Built in row batches with struct hashes so no per-key strings are materialised."""
+    parts = []
+    for off in range(0, len(df), batch):
+        x = (df.slice(off, batch).select("row", "country", pl.col(num).alias("num"),
+                                         pl.col(tok).fill_null("").str.split(" ").list.unique().alias("tok"))
+             .filter(pl.col("num").is_not_null() & (pl.col("num") != "")).explode("tok")
+             .filter(pl.col("tok").is_not_null() & (pl.col("tok").str.len_chars() >= 2)))
+        parts.append(x.select("row", pl.struct(pl.lit(tag).alias("tag"), "country", "num", "tok")
+                              .hash(seed=271).alias("key")).unique())
+    return pl.concat(parts)
+
+
 def make_keys(df: pl.DataFrame, name_df: pl.DataFrame, addr_df: pl.DataFrame) -> pl.DataFrame:
     """One row per record with a UInt64 key column per key type (null when unavailable)."""
     rescue = "H" in KEY_TYPES
@@ -102,7 +120,10 @@ class Blocker:
         t_keys = make_keys(tg, name_df, addr_df)
         self.index = {}
         self.dropped = {}
+        numeric = {n[0] for n in NUMERIC}
         for k, (_, cap) in KEY_TYPES.items():
+            if k in numeric:
+                continue  # built separately by numeric_pairs.py and passed to candidates()
             tbl = postings(t_keys, k, "t")
             cnt = tbl.group_by("key").agg(pl.len().alias("n"))
             keep = cnt.filter(pl.col("n") <= cap).select("key")
@@ -110,11 +131,18 @@ class Blocker:
             self.index[k] = tbl.join(keep, on="key", how="semi")
         del t_keys
 
-    def candidates(self, s1_rows, top_k: int = TOP_K) -> pl.DataFrame:
-        """(s1, t, bscore, kmask) for the given S1 rows, at most top_k per S1."""
+    def candidates(self, s1_rows, top_k: int = TOP_K, extra: pl.DataFrame | None = None) -> pl.DataFrame:
+        """(s1, t, bscore, kmask) for the given S1 rows, at most top_k per S1.
+
+        extra: optional precomputed (s1, t, tag) pairs from numeric_pairs.py (channels J/K/L)."""
         q = self.q_keys.filter(pl.col("row").is_in(pl.Series(s1_rows, dtype=pl.UInt32)))
         parts = []
         for i, (k, (w, _)) in enumerate(KEY_TYPES.items()):
+            if k not in self.index:
+                if extra is not None and len(extra):
+                    hit = extra.filter(pl.col("tag") == k).select("s1", "t").unique()
+                    parts.append(hit.with_columns(pl.lit(w, pl.UInt16).alias("w"), pl.lit(1 << i, pl.UInt16).alias("m")))
+                continue
             qk = postings(q, k, "s1")
             # Multiple shared keys within a channel must count only once.
             hit = qk.join(self.index[k], on="key").select("s1", "t").unique()

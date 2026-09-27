@@ -36,13 +36,17 @@ KEY_TYPES = {
     "F": (2, 50),   # postcode + house number
     "G": (2, 100),  # rarest address token + house number
 }
-if BLOCKING_PROFILE in {"wide", "rescue"}:
+if BLOCKING_PROFILE in {"wide", "rescue", "numeric"}:
     KEY_TYPES = {"A": (3, 1000), "B": (3, 1000), "C": (2, 1000),
                  "D": (2, 500), "E": (1, 300), "F": (2, 300), "G": (2, 500)}
-if BLOCKING_PROFILE == "rescue":
+if BLOCKING_PROFILE in {"rescue", "numeric"}:
     KEY_TYPES.update({"H": (2, 200), "I": (1, 100)})
-elif BLOCKING_PROFILE not in {"v1", "wide"}:
-    raise ValueError("ER_BLOCKING_PROFILE must be v1, wide, or rescue")
+if BLOCKING_PROFILE == "numeric":
+    # Astra's numeric rescue channels: country + house number (or postcode) + every
+    # name / address token. They find variants whose rarest words changed.
+    KEY_TYPES.update({"J": (1, 200), "K": (1, 200), "L": (1, 200)})
+elif BLOCKING_PROFILE not in {"v1", "wide", "rescue"}:
+    raise ValueError("ER_BLOCKING_PROFILE must be v1, wide, rescue or numeric")
 
 THRESH_GRID = [round(0.20 + 0.025 * i, 3) for i in range(31)]  # 0.20 .. 0.95
 

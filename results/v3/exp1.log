@@ -1,0 +1,34 @@
+blocking index 84s
+  blocking s1fit: 2,698,617 pairs (134.9/query), recall 0.9498, oracle U 0.9816
+  blocking train: 8,119,289 pairs (135.3/query), recall 0.9500, oracle U 0.9818
+  blocking val: 2,703,691 pairs (135.2/query), recall 0.9506, oracle U 0.9819
+  shortlist train top20: 1,107,905 pairs (18.5/query), recall 0.9487, oracle U 0.9812
+  shortlist train top30: 1,589,376 pairs (26.5/query), recall 0.9492, oracle U 0.9814
+  shortlist train top40: 2,035,917 pairs (33.9/query), recall 0.9494, oracle U 0.9814
+  shortlist train top60: 2,846,202 pairs (47.4/query), recall 0.9495, oracle U 0.9815
+  shortlist val top20: 368,855 pairs (18.4/query), recall 0.9494, oracle U 0.9814
+  shortlist val top30: 529,317 pairs (26.5/query), recall 0.9498, oracle U 0.9816
+  shortlist val top40: 678,276 pairs (33.9/query), recall 0.9500, oracle U 0.9817
+  shortlist val top60: 948,840 pairs (47.4/query), recall 0.9501, oracle U 0.9818
+shortlist stage 194s
+  features train done 74s
+  features val done 94s
+Training until validation scores don't improve for 75 rounds
+[250]	val's binary_logloss: 0.0115402
+[500]	val's binary_logloss: 0.0108058
+[750]	val's binary_logloss: 0.0106556
+Early stopping, best iteration is:
+[763]	val's binary_logloss: 0.0106487
+trained 763 rounds in 246s
+VAL macro F0.5 0.9637 at threshold 0.69 | candidate oracle U 0.9817 | matching loss 0.0180
+shape: (2, 3)
+┌─────────┬───────┬──────────┐
+│ country ┆ len   ┆ f        │
+│ ---     ┆ ---   ┆ ---      │
+│ str     ┆ u32   ┆ f64      │
+╞═════════╪═══════╪══════════╡
+│ India   ┆ 7974  ┆ 0.957597 │
+│ US      ┆ 12026 ┆ 0.967783 │
+└─────────┴───────┴──────────┘
+top gain: ['p1', 'num_jac', 'a_tset', 'num_q_in_t', 'nm_true_extra_max', 'num_t_in_q', 'cc_partial', 'h_absdiff', 'h_lev', 'bscore', 'n_tsort', 'g_same_house', 'nm_extra_idf', 'nm_extra_max', 'a_ratio', 'g_same_core_badaddr', 'n_len2', 'n_partial', 'ntok_r', 'nm_true_extra', 'sk_ratio', 'kC', 'num_jac_rank', 'h_prefix', 'ad_extra_idf']
+exit 0

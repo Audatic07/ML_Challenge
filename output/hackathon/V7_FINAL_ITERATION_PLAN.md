@@ -241,7 +241,7 @@ without labels.
 
 | Time | Track | Work | Needs |
 | --- | --- | --- | --- |
-| **Now** | Access | Bucket-policy statements `AMLV7Team*`: Abhigyan's and Akash's SageMaker roles may read the ens3, V6 member, audit-feature and `shared/er-v7-20260927/` prefixes, and write only under `shared/er-v7-20260927/`, until 05:30 IST (their v5.1 read grants already exist). Record job IDs, caps and shutdown on control | Aditya (account owner) |
+| **Now** | Access | Bucket-policy statements `AMLV7Team*`: Abhigyan's and Akash's SageMaker roles may read the ens3, V6 member, audit-feature and `shared/er-v7-20260927/` prefixes, and write only under `shared/er-v7-20260927/`. **Live since 17:45 IST 27 Sep, valid until 05:30 IST on 28 Sep, after the close** (their v5.1 read grants already exist). Record job IDs, caps and shutdown on control | Aditya (account owner) |
 | Now | Fallback | No upload now (Aditya's decision). `AML_submission_v6.zip` stays ready; SHA-256 re-verified at 17:40 IST. If V7 has not passed every gate by the cutoff, a human uploads V6 before the deadline | Portal operator |
 | 17:50-18:20 | Early read | Run the **existing** scaffold `gate` as-is on real inputs (2-fold B1). A measurement only, never a release | Abhigyan's machine |
 | 17:50-18:55 | WP1, WP2, WP3 | Three agents in parallel, one package each | Any agents |

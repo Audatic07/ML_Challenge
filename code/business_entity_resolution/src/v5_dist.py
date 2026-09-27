@@ -966,7 +966,7 @@ def worker(args):
         log(f"START {queue.prefix}:{task['id']}")
         started = time.monotonic()
         try:
-            if task["kind"] in ("train", "final", "bench", "v6train"):
+            if task["kind"] in ("train", "final", "bench", "v6train", "v6audit"):
                 ctx.drop_catalog()
             info = RUNNERS[task["kind"]](task, store, ctx)
             store.put_json(f"done/{task['id']}.json", {"worker": args.name, "seconds": time.monotonic() - started,

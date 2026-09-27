@@ -247,7 +247,103 @@ def run_score6(task, store, ctx):
             "kept_queries": out["s1"].n_unique(), "above_threshold": int((out["p"] >= manifest["threshold"]).sum())}
 
 
-RUNNERS = {"v6cut": run_cut, "v6train": run_train6, "v6score": run_score6}
+def load_models(store, prefixes, ctx):
+    """v6 boosters (checksum-verified) of the listed queues; all must share one feature list."""
+    import lightgbm as lgb
+    boosters, names = [], None
+    for prefix in prefixes:
+        queue = Store(store.bucket, prefix, store.base_root)
+        manifest = queue.get_json("model/model_manifest.json")
+        path = queue.download("model/model.txt", ctx.work / f"model-{len(boosters)}.txt")
+        if hashlib.sha256(path.read_bytes()).hexdigest() != manifest["model_sha256"]:
+            raise ValueError(f"Model checksum mismatch for {prefix}")
+        if names not in (None, manifest["features"]):
+            raise ValueError("Ensemble members use different features")
+        names = manifest["features"]
+        boosters.append((prefix, manifest["model_sha256"], lgb.Booster(model_file=str(path))))
+    return boosters, names
+
+
+def run_audit(task, store, ctx):
+    """One-time evaluation of a champion chosen on tune, on the locked audit S1 rows.
+
+    Every threshold is fixed in the task (chosen on tune); nothing is selected here. Reports
+    the champion (mean p of task["models"] on the task cut) next to v5.1 at the same cut, the
+    v5.1 full retrieved union and the released cosine top-30 cascade."""
+    from .v4_train import partitions
+    from .v5_dist import stage_rank
+    started = time.monotonic()
+    plan = ctx.plan
+    source = source_store(store, plan)
+    booster1, manifest1 = stage1(ctx, source)
+    audit_store = Store(store.bucket, task["audit_prefix"], store.base_root)
+    audit_plan = audit_store.get_json("plan.json")
+    split = partitions(plan["train_queries"], plan["fit"], plan["stop"], plan["tune"])[0]
+    audit = np.sort(split.audit).astype(np.uint32)
+    if digest(audit.tolist()) != audit_plan["audit_sha"]:
+        raise ValueError("Audit rows differ from the audit feature plan")
+    boosters, names = load_models(store, task["models"], ctx)
+    if names != manifest1["features"]:
+        raise ValueError("v6 and v5.1 feature lists differ")
+    truth, _ = truth_for(ctx.data, {"audit": audit}, np.array([], dtype=np.uint32))
+    gt = truth.select("s1", pl.col("target_id").alias("t"))
+    th = task["thresholds"]
+    kept_parts, full_above, rel_above, full_hit, rel_hit, counts = [], [], [], [], [], {"full": 0, "release": 0}
+    for name in sorted(n[:-5] for n in audit_store.list("tasks")):
+        frame = read_shard(audit_store, f"feat/{name}.parquet", ctx)
+        p1 = booster1.predict(frame.select(names).to_numpy(), num_threads=ctx.workers)
+        frame = frame.with_columns(pl.Series("p1", p1.astype(np.float32)))
+        base = frame.select("s1", "t", "target_id", pl.col("p1").alias("p"))
+        counts["full"] += len(base)
+        full_above.append(base.filter(pl.col("p") >= th["v51_full"]))
+        full_hit.append(base.select("s1", pl.col("target_id").alias("t")).join(gt, on=["s1", "t"]))
+        rel = frame.filter(stage_rank({"score": ["combo", "combo_word"]}) <= 30).select("s1", "t", "target_id",
+                                                                                          pl.col("p1").alias("p"))
+        counts["release"] += len(rel)
+        rel_above.append(rel.filter(pl.col("p") >= th["release_cosine30"]))
+        rel_hit.append(rel.select("s1", pl.col("target_id").alias("t")).join(gt, on=["s1", "t"]))
+        kept = cut(frame, task["cut"]["n"], task["cut"]["floor"])
+        x = kept.select(names).to_numpy()
+        p = np.mean([b.predict(x, num_threads=ctx.workers) for _, _, b in boosters], axis=0) if len(kept) else np.zeros(0)
+        kept_parts.append(kept.select("s1", "t", "target_id", "p1").with_columns(pl.Series("p", p.astype(np.float32))))
+        del frame, base, rel, kept, x
+        gc.collect()
+        log(f"audit {name}: pairs so far full={counts['full']:,}")
+    country = pl.read_csv(ctx.data / "train" / "train_source1.tsv", separator="	", quote_char=None,
+                          columns=["country"], infer_schema=False).with_row_index("s1").with_columns(
+        pl.col("s1").cast(pl.UInt32)).filter(pl.col("s1").is_in(pl.Series(audit).implode()))
+
+    def report(pred_scored, threshold, hit, pairs):
+        chosen = unique_assign(pred_scored).filter(pl.col("p") >= threshold).select("s1", pl.col("target_id").alias("t"))
+        per = per_entity(audit, gt, chosen).join(per_entity(audit, gt, hit).select("s1", pl.col("f").alias("oracle")),
+                                                  on="s1").join(country, on="s1", how="left")
+        out = {"macro_f05": float(per["f"].mean()), "oracle_u": float(per["oracle"].mean()), "threshold": threshold,
+               "pairs_per_query": pairs / len(audit), "singleton_f": float(per.filter(pl.col("g") == 0)["f"].mean() or 0),
+               "by_country": per.group_by("country").agg(pl.len().alias("queries"), pl.col("f").mean().alias("macro_f05"),
+                                                        pl.col("oracle").mean().alias("oracle_u")).sort("country").to_dicts()}
+        return out, per.select("s1", "f")
+
+    kept = pl.concat(kept_parts)
+    kept_hit = kept.select("s1", pl.col("target_id").alias("t")).join(gt, on=["s1", "t"])
+    results, per = {}, {}
+    results["champion"], per["champion"] = report(kept.select("s1", "t", "target_id", "p"), th["champion"], kept_hit, len(kept))
+    results["v51_same_cut"], per["v51_same_cut"] = report(kept.select("s1", "t", "target_id", pl.col("p1").alias("p")),
+                                                          th["v51_same_cut"], kept_hit, len(kept))
+    results["v51_full_union"], _ = report(pl.concat(full_above), th["v51_full"], pl.concat(full_hit), counts["full"])
+    results["release_cosine30"], per["release"] = report(pl.concat(rel_above), th["release_cosine30"],
+                                                         pl.concat(rel_hit), counts["release"])
+    for other in ("v51_same_cut", "release"):
+        d = per["champion"].join(per[other], on="s1", suffix="_o").select(pl.col("f") - pl.col("f_o"))["f"].to_numpy()
+        results[f"delta_vs_{other}"] = {"mean": float(d.mean()), "se": float(d.std(ddof=1) / np.sqrt(len(d)))}
+    results.update(audit_queries=len(audit), cut=task["cut"], models=[(p, sha) for p, sha, _ in boosters],
+                   seconds=time.monotonic() - started, note="thresholds fixed from tune; evaluated once")
+    store.put_json(f"audit/{task['id']}.json", results)
+    log("AUDIT " + str({k: v for k, v in results.items() if k not in ("models",)}))
+    return {k: (v["macro_f05"] if isinstance(v, dict) and "macro_f05" in v else v) for k, v in results.items()
+            if k not in ("models", "cut")}
+
+
+RUNNERS = {"v6cut": run_cut, "v6train": run_train6, "v6score": run_score6, "v6audit": run_audit}
 
 
 def score_tasks(feats, source_prefix):

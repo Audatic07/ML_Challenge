@@ -124,3 +124,18 @@ def test_v6_queue_end_to_end(tmp_path):
     b = pl.read_parquet(store / "v6v" / "model" / "tune_scores.parquet").sort("s1", "t")
     assert a.select("s1", "t", "p1").equals(b.select("s1", "t", "p1"))
     check_final("v6v", 4)
+
+    # locked-audit features, then the one-time audit evaluation of a two-model champion
+    subprocess.run([sys.executable, "tools/audit_feat_plan.py", "--root", str(store), "--source", "v51", "--prefix", "aud",
+                    "--data", str(data)], cwd=ROOT, check=True)
+    worker("aud", "aud")
+    audit_task = {"id": "v6audit-x", "kind": "v6audit", "priority": 0, "min_mem_gb": 1, "audit_prefix": "aud",
+                  "models": ["v6", "v6v"], "cut": {"n": 4, "floor": 0.001},
+                  "thresholds": {"champion": 0.5, "v51_same_cut": 0.5, "v51_full": 0.5, "release_cosine30": 0.5}}
+    (store / "v6" / "tasks" / "v6audit-x.json").write_text(json.dumps(audit_task))
+    worker("v6", "v6-audit")
+    audit = json.loads((store / "v6" / "audit" / "v6audit-x.json").read_text())
+    assert audit["audit_queries"] > 0 and len(audit["models"]) == 2
+    for key in ("champion", "v51_same_cut", "v51_full_union", "release_cosine30"):
+        assert 0 <= audit[key]["macro_f05"] <= audit[key]["oracle_u"] <= 1, key
+    assert audit["champion"]["pairs_per_query"] <= 4 < audit["v51_full_union"]["pairs_per_query"]

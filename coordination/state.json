@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 24,
+  "epoch": 25,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T11:26:09.1436114+00:00",
+  "updated_at": "2026-09-27T11:49:15.2164457+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -31,7 +31,7 @@
   },
   "contract_version": "2.0-proposed",
   "contract_accepted": false,
-  "integration_commit": null,
+  "integration_commit": "2795605eeefef644fe87be952cf8ee03a43f3a26",
   "dataset_manifest": null,
   "split_manifest": null,
   "incumbent_manifest": null,
@@ -87,7 +87,7 @@
     {
       "session_id": "astra-v7plan-20260927-1127",
       "branch": "codex/v7-plan-astra-20260927-1127",
-      "status": "active; plan review and committed-branch consolidation only; no implementation, training or cloud work"
+      "status": "complete; V7 revision 2 and branch consolidation published to main; no implementation, training, cloud jobs or portal action"
     }
   ],
   "claims": [
@@ -215,36 +215,9 @@
       "authorization": "User explicitly authorized ONLY serialized coordination claim publication; no model code change, compute launch, quota request, dependency change, AWS job or spending.",
       "recorded_by": "Codex coordination session on behalf of Abhigyan; logical owner session identifier assigned for this claim, not a claim that another agent was started.",
       "evidence": "coordination/evidence/s2-input-gate-abd/claim-request.md"
-    },
-    {
-      "task_id": "V7-PLAN",
-      "session_id": "astra-v7plan-20260927-1127",
-      "branch": "codex/v7-plan-astra-20260927-1127",
-      "paths": [
-        "output/hackathon/V7_FINAL_ITERATION_PLAN.md",
-        "output/hackathon/SOL_IMPLEMENTATION_PLAN.md (historical banner only)",
-        "coordination/START_HERE.md",
-        "coordination/prompts/SOL_START.md (current-plan pointer only)",
-        "coordination/evidence/v7-plan/",
-        "coordination/BRANCH_CONSOLIDATION.md",
-        "README.md",
-        "experiments/reference_v3_results/",
-        "experiments/reference_akash_v3/"
-      ],
-      "base_main_sha": "e1502f664ce5272a4e6f0e606180aa01d2381296",
-      "created_at": "2026-09-27T11:26:09.1436114+00:00",
-      "next_checkpoint": "Review source and evidence; publish revised execution-ready V7 plan and integration manifest",
-      "deliverable": "Planning documentation plus consolidation of existing committed work to main. No new model code or training."
     }
   ],
-  "integration_claim": {
-    "task_id": "INTEGRATE",
-    "session_id": "astra-v7plan-20260927-1127",
-    "branch": "codex/v7-plan-astra-20260927-1127",
-    "base_main_sha": "e1502f664ce5272a4e6f0e606180aa01d2381296",
-    "created_at": "2026-09-27T11:26:09.1436114+00:00",
-    "scope": "User explicitly requests branch consolidation to main. Integrate reviewed committed snapshots only; preserve all live peer checkouts/claims. Canonical V6 lineage plus published fixes, review, validator and experimental reference code; no implementation/training/cloud actions."
-  },
+  "integration_claim": null,
   "submission_claim": null,
   "tasks": [
     {
@@ -546,13 +519,17 @@
     },
     {
       "id": "V7-PLAN",
-      "status": "claimed",
+      "status": "accepted",
       "owner_session": "astra-v7plan-20260927-1127",
       "depends_on": [],
       "optional": false,
       "summary": "Review V7 and consolidate existing committed branches on main, planning only",
-      "code_sha": null,
-      "evidence": []
+      "code_sha": "2795605eeefef644fe87be952cf8ee03a43f3a26",
+      "evidence": [
+        "coordination/evidence/v7-plan/REVIEW.md",
+        "coordination/BRANCH_CONSOLIDATION.md",
+        "output/hackathon/V7_FINAL_ITERATION_PLAN.md"
+      ]
     }
   ],
   "active_job_reservations": [
@@ -743,6 +720,17 @@
       "document": "coordination/evidence/s2-model/claude-newacct-20260927-1155.md (a35aead)",
       "state": "smoke passed; zero-survivor handling, final fit/predict entry point, tie-breaking and cut policy moved with the claim",
       "acknowledged": true
+    },
+    {
+      "from": "astra-v7plan-20260927-1127",
+      "to": "current S2-MODEL owner / next separately authorized execution session",
+      "at": "2026-09-27T11:49:15.2164457+00:00",
+      "task": "V7 implementation and training preparation",
+      "document": "output/hackathon/V7_FINAL_ITERATION_PLAN.md",
+      "code_sha": "2795605eeefef644fe87be952cf8ee03a43f3a26",
+      "state": "Plan and consolidation complete. V6 fallback unchanged. Existing stage2_release.py remains a scaffold with documented gaps; do not treat its current gate as revised V7 approval.",
+      "next": "Fetch main and control; honor active path claims; claim R0 inputs/protocol and implement section 3 gaps before running revised gates. No compute or training launched by this review.",
+      "local_preservation": "Original V7 draft and local template backed up with SHA-256 under C:/Ml_challenge/.team-local/v7-main-before-20260927-1127/ before local main fast-forward."
     }
   ],
   "budget": {
@@ -766,6 +754,16 @@
       "basis": "User replaced fixed roles and requested a Sol-ready 0.98 strategy",
       "decision": "Any agent can claim any useful task; Sol may implement the entire critical path",
       "technical_plan": "output/hackathon/SOL_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "id": "V7-PLAN-REVIEW-20260927",
+      "at": "2026-09-27T11:49:15.2164457+00:00",
+      "basis": "User explicitly requested V7 plan improvement and branch consolidation, with no implementation or training",
+      "decision": "Consolidated 12 published code branch tips, kept V6 canonical and incompatible v3 lineages in source-hashed reference folders. Adopt reviewed V7 planning specification with coherent population rivals, fixed-candidate correction, D/C checks, disclosed second audit, measured runtime and strict release contracts.",
+      "technical_plan": "output/hackathon/V7_FINAL_ITERATION_PLAN.md",
+      "main_sha": "2795605eeefef644fe87be952cf8ee03a43f3a26",
+      "validation": "31 existing non-training tests and 87 subtests passed; 128 Python files syntax-parsed; 71 reference files and 54 inherited canonical files source-verified",
+      "restrictions": "No new V7 implementation, model result, cloud authorization or portal receipt. Existing peer claims preserved."
     }
   ],
   "operator_dependencies": [
@@ -804,5 +802,12 @@
       "fallback": "AML_submission.zip unchanged (c00693f4...)",
       "evidence": "coordination/evidence/v6-train/claude-20260927-1420.md on codex/v6-train-claude-20260927-1420 (60ec04d)"
     }
-  ]
+  ],
+  "current_plan": {
+    "path": "output/hackathon/V7_FINAL_ITERATION_PLAN.md",
+    "revision": 2,
+    "main_sha": "2795605eeefef644fe87be952cf8ee03a43f3a26",
+    "status": "planning specification; execution remains with separately authorized teammate",
+    "evidence": "coordination/evidence/v7-plan/REVIEW.md"
+  }
 }

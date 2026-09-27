@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 10,
+  "epoch": 11,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T04:59:53Z",
+  "updated_at": "2026-09-27T06:06:34.284839+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -35,6 +35,11 @@
       "session_id": "astra-20260927-0450",
       "branch": "codex/submission-support-astra-20260927-0450",
       "status": "active; submission support only; no cloud mutations"
+    },
+    {
+      "session_id": "claude-20260927-1130",
+      "branch": "codex/stage2-claude-20260927-1130",
+      "status": "active; STAGE2-CASCADE"
     }
   ],
   "claims": [
@@ -94,6 +99,22 @@
       "authorization": "User explicitly assigns these new paths. Recorded subtask carve-out from broad RETRIEVAL-V4 claim; DIST-V5 files, jobs and S3 prefixes remain read-only.",
       "code_sha": "220ff352451b68f734fb0f3c2aa46b4d0f908415",
       "checkpoint_at": "2026-09-26T23:46:09.857777+00:00"
+    },
+    {
+      "task_id": "STAGE2-CASCADE",
+      "session_id": "claude-20260927-1130",
+      "branch": "codex/stage2-claude-20260927-1130",
+      "paths": [
+        "code/business_entity_resolution/src/v6_stage2.py",
+        "code/business_entity_resolution/tests/test_v6_stage2.py",
+        "code/business_entity_resolution/tools/v6_*",
+        "coordination/evidence/stage2/"
+      ],
+      "base_sha": "fdcfa30 (codex/v5-dist-claude-20260927)",
+      "created_at": "2026-09-27T06:06:34.284839+00:00",
+      "next_checkpoint": "2-fold tune estimate of stage-2 sibling matcher on stage-1 top-K; then test inference",
+      "deliverable": "Learned stage-1 top-K candidate cut (model p) + stage-2 LightGBM with sibling/anchor features from stage-1 scores; tune F and U at K; release candidate if it beats 0.9605 with fewer candidates",
+      "evidence_basis": "Local analysis of shared/er-v51-20260927/model/tune_scores.parquet: loss 3.21pt = rejected retrieved positives ~1.94pt, FP ~0.79pt, misses ~0.48pt; top-10 by stage-1 p keeps U 0.9948 and F 0.96794"
     }
   ],
   "integration_claim": null,
@@ -297,6 +318,18 @@
         "coordination/evidence/submission-support/astra-20260927-0450.md"
       ],
       "scope_authorization": "Explicit user request; independent preparation is permitted before full P10/P11."
+    },
+    {
+      "id": "STAGE2-CASCADE",
+      "status": "claimed",
+      "owner_session": "claude-20260927-1130",
+      "depends_on": [],
+      "optional": true,
+      "summary": "Stage-1 model top-K candidates + stage-2 sibling-aware matcher",
+      "code_sha": null,
+      "evidence": [
+        "coordination/evidence/stage2/"
+      ]
     }
   ],
   "active_job_reservations": [

@@ -80,7 +80,7 @@ def cosines(split):
     tk, te = table(f"{V}/{split}_t.parquet", "t")
     pairs = (pl.read_parquet(f"{V}/{split}_pairs.parquet").with_row_index("_p")
              .join(qk.rename({"_i": "qi"}), on="s1").join(tk.rename({"_i": "ti"}), on="t").sort("_p"))
-    qi, ti = torch.as_tensor(pairs["qi"].to_numpy(), device="cuda"), torch.as_tensor(pairs["ti"].to_numpy(), device="cuda")
+    qi, ti = torch.as_tensor(pairs["qi"].to_numpy().astype(np.int64), device="cuda"), torch.as_tensor(pairs["ti"].to_numpy().astype(np.int64), device="cuda")
     cos = torch.cat([(qe[qi[i:i + 1_000_000]].float() * te[ti[i:i + 1_000_000]].float()).sum(-1) for i in range(0, len(qi), 1_000_000)])
     out = pairs.select("s1", "t").with_columns(pl.Series("cos", cos.cpu().numpy().astype(np.float32)))
     path = f"{V}/cos_{split}.parquet"

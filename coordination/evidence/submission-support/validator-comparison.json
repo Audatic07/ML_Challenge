@@ -1,0 +1,65 @@
+{
+  "supplied_sha256": "f96f59934383a15095914f507620c078c474e8f9c60e864b2d051ed173a22dfc",
+  "cases": [
+    {
+      "case": "valid_reordered",
+      "strict_exit": 0,
+      "supplied_exit": 0,
+      "supplied_warnings": 0
+    },
+    {
+      "case": "subset_violation",
+      "strict_exit": 1,
+      "supplied_exit": 0,
+      "supplied_warnings": 1
+    },
+    {
+      "case": "missing_candidate",
+      "strict_exit": 1,
+      "supplied_exit": 0,
+      "supplied_warnings": 1
+    },
+    {
+      "case": "unknown_target",
+      "strict_exit": 1,
+      "supplied_exit": 1,
+      "supplied_warnings": 0
+    },
+    {
+      "case": "duplicate_target",
+      "strict_exit": 1,
+      "supplied_exit": 1,
+      "supplied_warnings": 0
+    },
+    {
+      "case": "duplicate_s1",
+      "strict_exit": 1,
+      "supplied_exit": 1,
+      "supplied_warnings": 0
+    },
+    {
+      "case": "missing_s1",
+      "strict_exit": 1,
+      "supplied_exit": 1,
+      "supplied_warnings": 0
+    },
+    {
+      "case": "non_exact_header",
+      "strict_exit": 1,
+      "supplied_exit": 0,
+      "supplied_warnings": 0
+    },
+    {
+      "case": "blank_line",
+      "strict_exit": 1,
+      "supplied_exit": 0,
+      "supplied_warnings": 0
+    },
+    {
+      "case": "missing_catalog",
+      "strict_exit": 1,
+      "supplied_exit": 0,
+      "supplied_warnings": 1
+    }
+  ]
+}

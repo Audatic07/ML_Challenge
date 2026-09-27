@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 25,
+  "epoch": 26,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T11:49:15.2164457+00:00",
+  "updated_at": "2026-09-27T12:12:32.559996+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -529,7 +529,8 @@
         "coordination/evidence/v7-plan/REVIEW.md",
         "coordination/BRANCH_CONSOLIDATION.md",
         "output/hackathon/V7_FINAL_ITERATION_PLAN.md"
-      ]
+      ],
+      "next_action": "Execute revision 3 (2e00a5c): access grant by Aditya, then WP1-WP3 in parallel; feature freeze 18:55-19:05 IST"
     }
   ],
   "active_job_reservations": [
@@ -764,6 +765,15 @@
       "main_sha": "2795605eeefef644fe87be952cf8ee03a43f3a26",
       "validation": "31 existing non-training tests and 87 subtests passed; 128 Python files syntax-parsed; 71 reference files and 54 inherited canonical files source-verified",
       "restrictions": "No new V7 implementation, model result, cloud authorization or portal receipt. Existing peer claims preserved."
+    },
+    {
+      "id": "V7-PLAN-REV3-20260927",
+      "basis": "User asked the Claude session on Aditya's machine for the final finish of Astra's revision 2 and approved publication",
+      "decision": "V7 plan revision 3 on main 2e00a5c supersedes revision 2's protocol: 5-fold cross-fitting on all 100k tune S1, deploy the 5-fold mean, one pre-registered audit comparison (G3); no D/C split or refit; test/audit features cached at the feature freeze; label-free France routing to V6 decisions; monotone constraints on p6/v5.1 p; expected-F, F2 and member spread dropped today. Work packages WP1-WP3 are unowned; any agent may claim them.",
+      "technical_plan": "output/hackathon/V7_FINAL_ITERATION_PLAN.md at 2e00a5c",
+      "fallback": "AML_submission_v6.zip kept ready, SHA-256 re-verified 7d66db41... at 17:40 IST; no portal upload now; V6 is uploaded if V7 misses its gates by the cutoff",
+      "access": "AMLV7Team* bucket statements prepared for the Abhigyan and Akash SageMaker roles (read V6/audit/er-v7 prefixes, write shared/er-v7-20260927/, until 2026-09-28T00:00Z); applied by the account owner, not by an agent",
+      "at": "2026-09-27T12:12:32.559996+00:00"
     }
   ],
   "operator_dependencies": [

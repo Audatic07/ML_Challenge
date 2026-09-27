@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 22,
+  "epoch": 23,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T10:50:03.312329+00:00",
+  "updated_at": "2026-09-27T11:20:31.824088+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -64,8 +64,8 @@
     },
     {
       "session_id": "claude-newacct-20260927-1155",
-      "branch": "not yet published (db4056b + saved smoke patch)",
-      "status": "active; S2-MODEL smoke run (Akash)"
+      "branch": "codex/s2-model-claude-newacct-20260927-1155",
+      "status": "released; S2-MODEL transferred to claude-abhigyan-20260927-1600"
     },
     {
       "session_id": "abhigyan-s2-input-gate-20260927",
@@ -77,6 +77,12 @@
       "session_id": "codex-publish-20260927",
       "branch": "codex/v51-final-results-20260927",
       "status": "complete; separate results branch published; no integration or submission"
+    },
+    {
+      "session_id": "claude-abhigyan-20260927-1600",
+      "owner": "Abhigyan",
+      "branch": "codex/s2-model-claude-abhigyan-20260927-1600",
+      "status": "active; S2-MODEL release path on the frozen v6 ens3 survivors; local Claude Code, no paid compute yet"
     }
   ],
   "claims": [
@@ -158,20 +164,26 @@
     },
     {
       "task_id": "S2-MODEL",
-      "session_id": "claude-newacct-20260927-1155",
-      "branch": "not yet published; base db4056b04647948c307a93ca988534a21d06f5ee plus the saved smoke patch",
+      "session_id": "claude-abhigyan-20260927-1600",
+      "branch": "codex/s2-model-claude-abhigyan-20260927-1600",
       "paths": [
         "code/business_entity_resolution/src/v6_stage2.py",
         "code/business_entity_resolution/tests/test_v6_stage2.py",
         "code/business_entity_resolution/tools/v6_analysis/",
         "coordination/evidence/s2-model/"
       ],
-      "base_sha": "db4056b04647948c307a93ca988534a21d06f5ee",
+      "base_sha": "a35aead (codex/s2-model-claude-newacct-20260927-1155) merged with 42714bb (V6-TRAIN, unchanged)",
       "created_at": "2026-09-27T09:23:43.876736+00:00",
-      "scope": "baseline reproduction, stage-two CV and one France shard; no full inference or additional workers",
-      "next_checkpoint": "smoke run results on the updated prerun manifest",
-      "recorded_by": "claude-20260927-1420 at the user's relayed request (Akash); paths inferred from the stage-2 plan review Tasks 2-3, owner to correct",
-      "no_overlap_with": "V6-TRAIN (src/v6_train.py, tools/v6_ensemble_eval.py, tests/test_v6_train.py)"
+      "scope": "Stage 2 stacked on the frozen v6 ens3 survivors: tune gate ens3 vs ens3+stage2 on the same tune S1 and survivors; only if it passes, frozen release manifest, shard-aware test inference on assigned workers and a collector. No audit access, no V6-TRAIN paths.",
+      "next_checkpoint": "tune gate on the canonical ens3 inputs (needs read access to the ens3 plan/manifest, member tune_scores and score shards); then launch approval",
+      "code_sha": "b607e93",
+      "checkpoint_at": "2026-09-27T11:20:31.824088+00:00",
+      "transfer": {
+        "from": "claude-newacct-20260927-1155",
+        "at": "2026-09-27T11:20:31.824088+00:00",
+        "basis": "Akash's written handoff relayed by Abhigyan; paths released on recording"
+      },
+      "published_smoke_commit": "a35aead: code files identical to Akash's verified tree f32eb112; the published tree 14e5d7ad differs by one line in his evidence note only"
     },
     {
       "task_id": "S2-INPUT-GATE-ABD",
@@ -429,13 +441,14 @@
     {
       "id": "S2-MODEL",
       "status": "claimed",
-      "owner_session": "claude-newacct-20260927-1155",
+      "owner_session": "claude-abhigyan-20260927-1600",
       "depends_on": [],
       "optional": true,
       "summary": "Stage-2 sibling model + expected-F selection on test survivors; +0.27 tune over S2-CUT (0.9705)",
-      "code_sha": "db4056b",
+      "code_sha": "b607e93",
       "evidence": [
-        "coordination/evidence/stage2/claude-20260927-1130.md on codex/stage2-claude-20260927-1130"
+        "coordination/evidence/s2-model/claude-newacct-20260927-1155.md on codex/s2-model-claude-newacct-20260927-1155 (a35aead)",
+        "coordination/evidence/s2-model/claude-abhigyan-20260927-1600.md on codex/s2-model-claude-abhigyan-20260927-1600 (b607e93)"
       ]
     },
     {
@@ -633,9 +646,11 @@
       "estimated_budget_usd": 1.5,
       "authorization": "Akash approves directly (account owner)",
       "scope": "baseline reproduction, stage-two CV, one France shard; no full inference, no additional workers",
-      "status": "reserved; not started",
+      "status": "completed",
       "created_at": "2026-09-27T09:23:43.876736+00:00",
-      "verification": "as reported by the relayed request; this recorder has no access to that account"
+      "verification": "results as reported by the owner session; evidence published at a35aead",
+      "result": "exit 0, 222.8 s wall, 6.51 GiB peak, 4 threads; no extra workers, no full inference",
+      "studio_app": "stop was denied inside the session; the account owner stops it from the console (space and storage kept)"
     }
   ],
   "submission_history": [],
@@ -677,6 +692,15 @@
       "document": "experiments/v51_local_20260927/README.md",
       "state": "Published code and aggregate metadata only; four tests pass; reserved 15k second-stage development F0.5 0.97647081 vs same-query baseline 0.96776538. Originally v5.1 tune queries, not fresh audit; not comparable directly with full-100k tuning or another run audit. Private weights/data remain local. No test inference or release.",
       "next": "Review/reproduce in a private ignored workspace; no active claim or paid job owned by publishing session."
+    },
+    {
+      "from": "claude-newacct-20260927-1155",
+      "to": "claude-abhigyan-20260927-1600",
+      "at": "2026-09-27T11:20:31.824088+00:00",
+      "task": "S2-MODEL",
+      "document": "coordination/evidence/s2-model/claude-newacct-20260927-1155.md (a35aead)",
+      "state": "smoke passed; zero-survivor handling, final fit/predict entry point, tie-breaking and cut policy moved with the claim",
+      "acknowledged": true
     }
   ],
   "budget": {

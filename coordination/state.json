@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 30,
+  "epoch": 31,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T12:58:59.980587+00:00",
+  "updated_at": "2026-09-27T13:25:45.795359+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -180,9 +180,9 @@
       "base_sha": "a35aead (codex/s2-model-claude-newacct-20260927-1155) merged with 42714bb (V6-TRAIN, unchanged)",
       "created_at": "2026-09-27T14:53:43.876736+05:30",
       "scope": "Stage 2 stacked on the frozen v6 ens3 survivors: tune gate ens3 vs ens3+stage2 on the same tune S1 and survivors; only if it passes, frozen release manifest, shard-aware test inference on assigned workers and a collector. No audit access, no V6-TRAIN paths.",
-      "next_checkpoint": "WP2 merged by the 18:55-19:05 feature freeze",
+      "next_checkpoint": "G3 once on the audit survivors; test prediction on assigned shards; collect",
       "code_sha": "b607e93",
-      "checkpoint_at": "2026-09-27T12:37:59.442743+00:00",
+      "checkpoint_at": "2026-09-27T13:25:45.795359+00:00",
       "transfer": {
         "from": "claude-newacct-20260927-1155",
         "at": "2026-09-27T16:50:31.824088+05:30",
@@ -203,7 +203,8 @@
           "basis": "V7 plan revision 3 (main 2e00a5c) WP2: protocol and release hardening; paths already held under S2-MODEL",
           "code_sha": "5ea334e"
         }
-      ]
+      ],
+      "result": "V7 B1 (F0+F1, 5-fold, code 3bc79e5): G0 V6 at 0.72 = 0.97061; OOF 0.97215 at alpha 1.0, threshold 0.7225; paired gain +0.00155 (se 0.00018); G2 PASS; release.json sha256 7a6d6b1875e27472d963292073cb9540c40d82f1fff179868adffc5d867d9d26"
     },
     {
       "task_id": "S2-INPUT-GATE-ABD",

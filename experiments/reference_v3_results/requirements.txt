@@ -1,0 +1,7 @@
+# Tested with Python 3.14.2 on Windows 11 (4 cores, 16 GB RAM)
+polars==1.44.2
+numpy==2.4.1
+rapidfuzz==3.14.6
+lightgbm==4.7.0
+Unidecode==1.4.0
+pytest==9.0.2

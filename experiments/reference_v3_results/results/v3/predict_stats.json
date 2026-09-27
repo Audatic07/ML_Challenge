@@ -1,0 +1,10 @@
+{
+  "test_entities": 1732544,
+  "candidate_pairs": 60712022,
+  "candidates_per_entity": 35.04212418270474,
+  "zero_candidate_entities": 117,
+  "matches": 5522505,
+  "empty_share": 0.06322205958405669,
+  "threshold": 0.69,
+  "seconds": 9409.95306444168
+}

@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 44,
+  "epoch": 45,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T17:40:52.005601+00:00",
+  "updated_at": "2026-09-27T17:57:53.083676+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -913,6 +913,14 @@
       "at": "2026-09-27T15:41:17.246786+00:00",
       "decision": "main 703b605 -> b99931f: merge of V7 F2 (533bcae, the audited B4 release code) plus B4 evidence",
       "basis": "Abhigyan in chat: push the work so the team lead can submit; F2/B4 tests passed on 533bcae"
+    },
+    {
+      "id": "V8-SCBLOCK-PILOT",
+      "at": "2026-09-27T17:57:53.083676+00:00",
+      "branch": "codex/v8-scblock-abhigyan (ff85628, fb72788)",
+      "result": "B5 = B4 features + 4 SC-Block cosine features (all-MiniLM-L6-v2, Apache-2.0, SupCon on 377,448 fit-only groups, 1 epoch in 101 s on ml.g5.2xlarge): tune OOF 0.98043 vs B4 0.98002 reproduced on the same folds, +0.00041 (paired se 0.00010); below the pre-registered +0.0010 bar. Test cosines were not produced (GPU job interrupted at 23:30 IST); nothing submitted.",
+      "next": "rerun tools/v8/gpu.py end to end (train+tune+test in one process), then cpu.py gate/test; consider more epochs and hard negatives",
+      "final_submission_tonight": "97ceedb9... (V7-B4 with V7's own France rows), public leaderboard 0.972"
     }
   ],
   "operator_dependencies": [

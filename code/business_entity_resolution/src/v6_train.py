@@ -29,6 +29,7 @@ import argparse
 import datetime
 import gc
 import hashlib
+import json
 import time
 
 import numpy as np
@@ -343,7 +344,25 @@ def run_audit(task, store, ctx):
             if k not in ("models", "cut")}
 
 
-RUNNERS = {"v6cut": run_cut, "v6train": run_train6, "v6score": run_score6, "v6audit": run_audit}
+def run_average(task, store, ctx):
+    """Mean v6 probability of the ensemble members on one test shard's survivors."""
+    parts = [read_shard(Store(store.bucket, m, store.base_root), f"score/{task['input']}.parquet", ctx)
+             for m in task["members"]]
+    base = parts[0]
+    for other in parts[1:]:
+        if not (other["s1"].equals(base["s1"]) and other["t"].equals(base["t"])):
+            raise ValueError("Ensemble members scored different survivors")
+    p = np.mean([x["p"].to_numpy() for x in parts], axis=0).astype(np.float32)
+    out = base.select("s1", "t", "target_id", "p1").with_columns(pl.Series("p", p))
+    local = ctx.work / f"{task['id']}.parquet"
+    out.write_parquet(local)
+    store.upload(local, f"score/{task['id']}.parquet")
+    local.unlink()
+    return {"pairs": len(out), "members": len(parts)}
+
+
+RUNNERS = {"v6cut": run_cut, "v6train": run_train6, "v6score": run_score6, "v6audit": run_audit,
+           "v6avg": run_average}
 
 
 def score_tasks(feats, source_prefix):
@@ -357,10 +376,11 @@ def score_tasks(feats, source_prefix):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("step", choices=["plan", "apply", "variant"])
+    parser.add_argument("step", choices=["plan", "apply", "variant", "ensemble"])
     parser.add_argument("--bucket")
     parser.add_argument("--root")
-    parser.add_argument("--source", required=True, help="plan: finished v5.1 run; apply: finished v6 queue")
+    parser.add_argument("--source", required=True,
+                        help="plan: finished v5.1 run; apply/variant: finished v6 queue; ensemble: comma-separated v6 queues")
     parser.add_argument("--prefix", required=True, help="new queue prefix")
     parser.add_argument("--train-n", type=int, default=15)
     parser.add_argument("--n", type=int, default=12)
@@ -374,9 +394,38 @@ def main():
     parser.add_argument("--feature-fraction", type=float, default=0.8)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
-    source, target = Store(args.bucket, args.source, args.root), Store(args.bucket, args.prefix, args.root)
+    target = Store(args.bucket, args.prefix, args.root)
     if target.exists("plan.json"):
         parser.error(f"{args.prefix} already has a plan; queues are immutable")
+    if args.step == "ensemble":
+        # Average of finished v6 queues on the same test survivors; threshold from the tune evaluation
+        # of the same average (tools/v6_ensemble_eval.py).
+        if args.threshold is None:
+            parser.error("ensemble needs --threshold from the tune evaluation of the average")
+        members = args.source.split(",")
+        stores = [Store(args.bucket, m, args.root) for m in members]
+        manifests = [m.get_json("model/model_manifest.json") for m in stores]
+        if len({json.dumps(m["cascade"], sort_keys=True) for m in manifests}) != 1:
+            parser.error("members use different cuts")
+        ids = sorted(n[:-5] for n in stores[0].list("tasks") if n.startswith("v6score-"))
+        for m in stores:
+            missing = [i for i in ids if not m.exists(f"done/{i}.json")]
+            if missing:
+                parser.error(f"{m.prefix}: {len(missing)} score tasks not finished")
+        base = stores[0].get_json("plan.json")
+        target.put_json("plan.json", dict(base, ensemble_of=members, plan_sha=digest({"ensemble_of": members,
+                                                                                      "threshold": args.threshold})))
+        target.put_json("model/model_manifest.json", {
+            "version": VERSION + "-mean", "members": [[m, x["model_sha256"]] for m, x in zip(members, manifests)],
+            "features": manifests[0]["features"], "cascade": manifests[0]["cascade"], "threshold": args.threshold,
+            "model_sha256": digest([x["model_sha256"] for x in manifests]), "source_prefix": base["source_prefix"]})
+        tasks = [{"id": i, "kind": "v6avg", "input": i, "members": members, "priority": 1, "min_mem_gb": 4} for i in ids]
+        tasks.append({"id": "final", "kind": "final", "inputs": ids, "requires": ids, "priority": 2, "min_mem_gb": 60})
+        for task in tasks:
+            target.put_json(f"tasks/{task['id']}.json", task)
+        log(f"published ensemble {args.prefix}: {len(members)} members, {len(ids)} shards, threshold {args.threshold}")
+        return
+    source = Store(args.bucket, args.source, args.root)
     base = source.get_json("plan.json")
     apply_cut = {"n": args.n, "floor": args.floor}
     if args.step == "apply":

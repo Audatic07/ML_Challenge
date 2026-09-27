@@ -139,3 +139,12 @@ def test_v6_queue_end_to_end(tmp_path):
     for key in ("champion", "v51_same_cut", "v51_full_union", "release_cosine30"):
         assert 0 <= audit[key]["macro_f05"] <= audit[key]["oracle_u"] <= 1, key
     assert audit["champion"]["pairs_per_query"] <= 4 < audit["v51_full_union"]["pairs_per_query"]
+
+    # ensemble of the two finished queues: averaged survivor scores, then the standard final
+    run(["src.v6_train", "ensemble", "--root", str(store), "--source", "v6,v6v", "--prefix", "ens", "--threshold", "0.5"])
+    worker("ens", "ens")
+    a = pl.read_parquet(store / "v6" / "score" / "v6score-test-US-000.parquet")
+    b = pl.read_parquet(store / "v6v" / "score" / "v6score-test-US-000.parquet")
+    e = pl.read_parquet(store / "ens" / "score" / "v6score-test-US-000.parquet")
+    assert np.allclose(e["p"], (a["p"] + b["p"]) / 2, atol=1e-6)
+    check_final("ens", 4)

@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 31,
+  "epoch": 32,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T13:25:45.795359+00:00",
+  "updated_at": "2026-09-27T13:37:04.435533+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -247,6 +247,19 @@
       "deliverable": "tools/v7_audit.py survivors|gate plus a fixture test",
       "code_sha": "3bc79e5",
       "checkpoint_at": "2026-09-27T12:58:59.980587+00:00"
+    },
+    {
+      "task_id": "V7-WP1",
+      "session_id": "claude-abhigyan-20260927-1600",
+      "branch": "codex/v7-wp1-claude-abhigyan-20260927",
+      "paths": [
+        "code/business_entity_resolution/src/v7_population.py",
+        "code/business_entity_resolution/tests/test_v7_population.py"
+      ],
+      "created_at": "2026-09-27T13:37:04.435533+00:00",
+      "code_sha": "see branch tip",
+      "scope": "F3 population rivals per plan revision 3 section 4; B2 rung",
+      "next_checkpoint": "B2 gate (5-fold) on the notebook; B2 kept only if OOF beats B1 (0.97215) by >= 0.0003"
     }
   ],
   "integration_claim": null,

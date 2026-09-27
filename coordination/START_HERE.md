@@ -8,6 +8,6 @@
 
 Published V6 is the fallback (reported audit 0.97089). Canonical code is under code/business_entity_resolution/. Published experiments are preserved under experiments/. Do not compare scores from different query cohorts or candidates as if they were the same evaluation.
 
-The V7 plan defines R0-R8 and its acceptance gates. Earlier P00-P11 entries can be stale; inspect actual evidence before claiming work. No fixed A/B/C/D roles, equal-contribution requirement or need to wait for every account.
+The V7 plan (revision 3) defines work packages WP1-WP3, the execution schedule and gates G0-G6. Earlier P00-P11 entries can be stale; inspect actual evidence before claiming work. No fixed A/B/C/D roles, equal-contribution requirement or need to wait for every account.
 
 Use the [current handoff prompt](prompts/SOL_START.md) when handing work to the execution teammate. The public repository carries source and aggregate metadata only; private data/models/scores remain in authorized private storage. Files do not start another session or authorize spending.

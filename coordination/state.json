@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 38,
+  "epoch": 39,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T14:34:04.958995+00:00",
+  "updated_at": "2026-09-27T15:21:40.535116+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -285,7 +285,9 @@
       ],
       "scope": "F2 decoy clusters (plan revision 2 section 4) and rung B4 = F0+F1+F3+F2",
       "preregistered_rule": "B4 replaces the submitted B2 only if (1) B4 OOF on the same 100k tune S1 and folds >= B2 OOF 0.97769 + 0.0003, (2) G2 passes vs V6, (3) a second, disclosed audit look passes G3 vs V6 and scores >= 0.97859 (B2 audit 0.97809 + 0.0005). Otherwise B2 stays.",
-      "next_checkpoint": "B4 gate on the notebook"
+      "next_checkpoint": "second disclosed audit look for B4 (rule: G3 pass vs V6 and audit >= 0.97859); B4 test prediction and collect",
+      "result": "B4 = F0+F1+F3+F2 (533bcae), same 100k tune S1 and folds: OOF 0.98002 at alpha 1.0, threshold 0.7375; +0.00941 vs V6 (se 0.00023); G2 PASS; beats B2 (0.97769) by 0.00233 >= 0.0003. release.json sha256 43987d03144b43c77d4893c673040fb2999ef1889681f354562272a355c77f90",
+      "checkpoint_at": "2026-09-27T15:21:40.535116+00:00"
     }
   ],
   "integration_claim": null,

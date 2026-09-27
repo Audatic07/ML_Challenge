@@ -1,16 +1,23 @@
 {
   "schema_version": 2,
-  "epoch": 17,
+  "epoch": 18,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T09:29:39.660950+00:00",
+  "updated_at": "2026-09-27T09:43:15.531237+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
     "verified_score": {
       "tune_macro_f05": 0.9605,
       "partition": "fixed 100k tune, audit unopened",
-      "release": "v5.1 + stage-1 top-30 (combo+combo_word cosine)"
+      "release": "v5.1 + stage-1 top-30 (combo+combo_word cosine)",
+      "v6_candidate": {
+        "tune_macro_f05": 0.97026,
+        "candidates_per_s1": 6.67,
+        "partition": "fixed 100k tune, audit unopened",
+        "model_sha256": "b7e7db652d4ab6519a243fb590b9d02ddb20336c38df6cf2b5a3f6194a11523d",
+        "status": "not released; test scoring in progress"
+      }
     }
   },
   "contract_version": "2.0-proposed",
@@ -128,10 +135,12 @@
       ],
       "base_sha": "db4056b (codex/stage2-claude-20260927-1130)",
       "created_at": "2026-09-27T08:56:21.180461+00:00",
-      "next_checkpoint": "v6train tune metrics (v6 vs v5.1 at the same cut), then 88 test survivor shards + final TSVs",
+      "next_checkpoint": "variant ensemble on tune, final TSVs + validator, choose champion on tune, one audit evaluation",
       "deliverable": "v6 LightGBM trained on v5.1 stage-1 survivors (top-20 by v5.1 p on fit), reusing shared/er-v51-20260927/feat; tune F/U/candidates per cut policy vs v5.1 at the same cut; test survivor scores + final TSVs in the v5.1 score format so stage-2 work can consume them",
       "not_touched": "src/v6_stage2.py, tools/v6_analysis/ (stage-2 path stays with its own owner)",
-      "code_sha": "6b0ed7b"
+      "code_sha": "300c3e9",
+      "checkpoint_at": "2026-09-27T09:43:15.531237+00:00",
+      "result": "tune macro F0.5 0.97026 at 6.67 candidates/S1 (v5.1 same cut 0.96794; paired +0.00232 se 0.00019); F unchanged at p>=0.01 cut with 4.91/S1"
     },
     {
       "task_id": "S2-MODEL",
@@ -446,8 +455,10 @@
       "depends_on": [],
       "optional": true,
       "summary": "Survivor-specialist v6 LightGBM on v5.1 cascade survivors (feature reuse via source_prefix); final scorer of the survivor candidate set",
-      "code_sha": "6b0ed7b",
-      "evidence": []
+      "code_sha": "300c3e9",
+      "evidence": [
+        "coordination/evidence/v6-train/claude-20260927-1420.md on codex/v6-train-claude-20260927-1420 (300c3e9)"
+      ]
     },
     {
       "id": "S2-INPUT-GATE-ABD",

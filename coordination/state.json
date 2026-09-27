@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 18,
+  "epoch": 19,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T09:43:15.531237+00:00",
+  "updated_at": "2026-09-27T10:05:54.300558+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -12,11 +12,16 @@
       "partition": "fixed 100k tune, audit unopened",
       "release": "v5.1 + stage-1 top-30 (combo+combo_word cosine)",
       "v6_candidate": {
-        "tune_macro_f05": 0.97026,
-        "candidates_per_s1": 6.67,
-        "partition": "fixed 100k tune, audit unopened",
-        "model_sha256": "b7e7db652d4ab6519a243fb590b9d02ddb20336c38df6cf2b5a3f6194a11523d",
-        "status": "not released; test scoring in progress"
+        "tune_macro_f05": 0.97061,
+        "candidates_per_s1_tune": 4.91,
+        "candidates_per_s1_test": 5.35,
+        "partition": "fixed 100k tune; audit evaluation pending (once, champion only)",
+        "queue": "shared/er-v6ens3-20260927",
+        "ensemble_id": "d0fa7781e62a1a4226d7b9e40fe2ad65529db2af5503766b2691ace0a186ff63",
+        "matching_results_sha256": "3f69fe5b983dc1407acfa3a45fb55dc59fce8a3d334f153961d0868521715f09",
+        "candidate_pairs_sha256": "9c438703e605ac9d5fc4c0931b1c2272743054e75aeeb019b95891a2c83a9872",
+        "validator": "official validator PASS --check-ids (worker and local); local structural checks pass",
+        "status": "release candidate; not packaged yet; not submitted"
       }
     }
   },
@@ -135,12 +140,12 @@
       ],
       "base_sha": "db4056b (codex/stage2-claude-20260927-1130)",
       "created_at": "2026-09-27T08:56:21.180461+00:00",
-      "next_checkpoint": "variant ensemble on tune, final TSVs + validator, choose champion on tune, one audit evaluation",
+      "next_checkpoint": "one-time audit (v6audit-ens3, thresholds fixed from tune), then package C:/Ml_challenge_submission_v6 (fallback zip untouched)",
       "deliverable": "v6 LightGBM trained on v5.1 stage-1 survivors (top-20 by v5.1 p on fit), reusing shared/er-v51-20260927/feat; tune F/U/candidates per cut policy vs v5.1 at the same cut; test survivor scores + final TSVs in the v5.1 score format so stage-2 work can consume them",
       "not_touched": "src/v6_stage2.py, tools/v6_analysis/ (stage-2 path stays with its own owner)",
-      "code_sha": "300c3e9",
-      "checkpoint_at": "2026-09-27T09:43:15.531237+00:00",
-      "result": "tune macro F0.5 0.97026 at 6.67 candidates/S1 (v5.1 same cut 0.96794; paired +0.00232 se 0.00019); F unchanged at p>=0.01 cut with 4.91/S1"
+      "code_sha": "42714bb",
+      "checkpoint_at": "2026-09-27T10:05:54.300558+00:00",
+      "result": "champion = mean of 3 survivor-trained LightGBMs; tune 0.97061 at 4.91 cand/S1 (cut top 12, v5.1 p>=0.01), threshold 0.72; v5.1 same cut 0.96794"
     },
     {
       "task_id": "S2-MODEL",
@@ -455,7 +460,7 @@
       "depends_on": [],
       "optional": true,
       "summary": "Survivor-specialist v6 LightGBM on v5.1 cascade survivors (feature reuse via source_prefix); final scorer of the survivor candidate set",
-      "code_sha": "300c3e9",
+      "code_sha": "42714bb",
       "evidence": [
         "coordination/evidence/v6-train/claude-20260927-1420.md on codex/v6-train-claude-20260927-1420 (300c3e9)"
       ]

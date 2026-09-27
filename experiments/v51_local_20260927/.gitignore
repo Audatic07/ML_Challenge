@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.parquet
+*.tsv
+*.csv
+*.zip
+*.ubj
+*.bin
+*.pkl
+*.npy
+*.npz
+*.txt
+!LICENSE_lightgbm.txt

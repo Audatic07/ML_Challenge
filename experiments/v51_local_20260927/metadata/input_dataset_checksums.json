@@ -1,0 +1,18 @@
+{
+  "train_ground_truth.tsv": {
+    "bytes": 127015583,
+    "sha256": "70bc1d8a16c667e0155c2105d0ab2ebe41d7e7a85d8a529e3ca81c6c3a5af037"
+  },
+  "train_source1.tsv": {
+    "bytes": 210069713,
+    "sha256": "591af0e1dfeb65cab71ea6ee8cb69df00f92d6ba6fa79e05746c938775d14973"
+  },
+  "train_source2.tsv": {
+    "bytes": 489301488,
+    "sha256": "6336c1a055eec79cf8a6d99fdc8d32a2e4d9dc2662e00963cb35d66b89ed09ed"
+  },
+  "train_source3.tsv": {
+    "bytes": 503705637,
+    "sha256": "67da22f5151898ff3006febd836c1a159e97ae95efa7257a5aff4fda685e58e9"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "evaluation": "15000 reserved second-stage development queries; these were in the original v5.1 tuning set, so this is not a new competition audit",
+  "queries": 15000,
+  "champion": {
+    "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+    "policy": "expected_f05",
+    "bias": -0.3,
+    "temperature": 1.0,
+    "macro_f05": 0.9768187093447704
+  },
+  "baseline_same_queries_macro_f05": 0.9677653816433015,
+  "published_v51_assignment_on_same_queries": 0.9678351081811314,
+  "new_macro_f05": 0.9764708106891286,
+  "paired_gain": 0.008705429045827264,
+  "candidate_oracle_u": 0.9948610377080095,
+  "matching_gap": 0.018390227018880934,
+  "score_bootstrap_95_interval": [
+    0.9750234728943488,
+    0.9780098915037999
+  ],
+  "gain_bootstrap_95_interval": [
+    0.007600732307314507,
+    0.009971394791979506
+  ],
+  "score_one_sided_95_lower": 0.975203151384506,
+  "by_country": [
+    {
+      "country": "US",
+      "queries": 8978,
+      "macro_f05": 0.9819551673743789
+    },
+    {
+      "country": "India",
+      "queries": 6022,
+      "macro_f05": 0.968294365268979
+    }
+  ],
+  "singleton_queries": 844,
+  "singleton_f05": 0.966824644549763,
+  "zero_candidate_queries": 7,
+  "candidate_pairs": 155381,
+  "predicted_pairs": 48929,
+  "external_data_used": false,
+  "competition_audit_evaluated": false,
+  "target_098_met": false,
+  "target_099_met": false,
+  "no_more_tuning_after_this_check": true
+}

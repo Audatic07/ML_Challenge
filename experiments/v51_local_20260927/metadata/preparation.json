@@ -1,0 +1,17 @@
+{
+  "seconds": 169.44867390000036,
+  "queries": 100000,
+  "survivors": 1031543,
+  "candidate_policy": {
+    "top_k": 16,
+    "floor": 0.0001
+  },
+  "source_model_sha": "eec93e350d320b46453d69f47010f07883c0b3e5eb6dd47d2dda0153f46cd982",
+  "code_checksums": {
+    "prepare.py": "3cf7f30c27ee741a5a86252b84e3b3962b68190189bdca2938c0674e4c52a1ea",
+    "stage2\\base.py": "42ca1186f924dee978a66d33c171b82cf89cf968f1039aec20a91495d2c997c3",
+    "stage2\\text_norm.py": "f4e88ca232173588508a81ebe8c3e14b276d571161530ff67db386a81d6c022e",
+    "stage2\\text_norm_v5.py": "cef0c18ae18e2194363e5667f2e96dc9c0329f5dea7658d2e289c38b12cd62f9",
+    "stage2\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

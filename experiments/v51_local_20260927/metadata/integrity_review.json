@@ -1,0 +1,32 @@
+{
+  "partition_sizes": [
+    65000,
+    10000,
+    10000,
+    15000
+  ],
+  "queries_unique": true,
+  "truth_targets_unique": true,
+  "normalized_identity_fingerprint_duplicate_groups": 0,
+  "fingerprint_check": "checked separately over all 100000 canonical country/core/address keys",
+  "feature_checks": {
+    "features": {
+      "pairs": 1031543,
+      "queries": 99976,
+      "nulls": 0,
+      "nonfinite": 0,
+      "duplicate_pairs": 0,
+      "features": 145
+    },
+    "features_reverse": {
+      "pairs": 1031543,
+      "queries": 99976,
+      "nulls": 0,
+      "nonfinite": 0,
+      "duplicate_pairs": 0,
+      "features": 156
+    }
+  },
+  "id_or_label_predictors": false,
+  "competition_audit_evaluated": false
+}

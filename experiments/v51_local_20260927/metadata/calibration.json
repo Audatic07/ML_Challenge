@@ -1,0 +1,286 @@
+{
+  "partition": "10000 second-stage calibration queries from original v5.1 tuning set",
+  "models_considered": [
+    "lightgbm",
+    "xgboost",
+    "lightgbm_reverse",
+    "xgboost_reverse"
+  ],
+  "survivor_oracle_u": 0.9955012770757484,
+  "results": [
+    {
+      "name": "baseline",
+      "policy": "threshold",
+      "threshold": 0.7200000000000002,
+      "macro_f05": 0.9687646083452257
+    },
+    {
+      "name": "lightgbm",
+      "policy": "threshold",
+      "threshold": 0.7000000000000002,
+      "macro_f05": 0.9724660818053802
+    },
+    {
+      "name": "xgboost",
+      "policy": "threshold",
+      "threshold": 0.7000000000000002,
+      "macro_f05": 0.9720837838220896
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "threshold",
+      "threshold": 0.7200000000000002,
+      "macro_f05": 0.976562116551065
+    },
+    {
+      "name": "xgboost_reverse",
+      "policy": "threshold",
+      "threshold": 0.7500000000000002,
+      "macro_f05": 0.9762817647101588
+    },
+    {
+      "name": "lightgbm_rawblend_0.25",
+      "policy": "threshold",
+      "threshold": 0.7400000000000002,
+      "macro_f05": 0.9706433967831571
+    },
+    {
+      "name": "lightgbm_rawblend_0.5",
+      "policy": "threshold",
+      "threshold": 0.7200000000000002,
+      "macro_f05": 0.9718169753724245
+    },
+    {
+      "name": "lightgbm_rawblend_0.75",
+      "policy": "threshold",
+      "threshold": 0.6700000000000002,
+      "macro_f05": 0.9724967383970907
+    },
+    {
+      "name": "xgboost_rawblend_0.25",
+      "policy": "threshold",
+      "threshold": 0.7200000000000002,
+      "macro_f05": 0.9705502697041184
+    },
+    {
+      "name": "xgboost_rawblend_0.5",
+      "policy": "threshold",
+      "threshold": 0.6900000000000002,
+      "macro_f05": 0.9718407416771863
+    },
+    {
+      "name": "xgboost_rawblend_0.75",
+      "policy": "threshold",
+      "threshold": 0.6300000000000001,
+      "macro_f05": 0.9724228625113046
+    },
+    {
+      "name": "lightgbm_reverse_rawblend_0.25",
+      "policy": "threshold",
+      "threshold": 0.7200000000000002,
+      "macro_f05": 0.9726585891268438
+    },
+    {
+      "name": "lightgbm_reverse_rawblend_0.5",
+      "policy": "threshold",
+      "threshold": 0.7100000000000002,
+      "macro_f05": 0.9751120829421265
+    },
+    {
+      "name": "lightgbm_reverse_rawblend_0.75",
+      "policy": "threshold",
+      "threshold": 0.6300000000000001,
+      "macro_f05": 0.9763046392331278
+    },
+    {
+      "name": "xgboost_reverse_rawblend_0.25",
+      "policy": "threshold",
+      "threshold": 0.6900000000000002,
+      "macro_f05": 0.9727368223222432
+    },
+    {
+      "name": "xgboost_reverse_rawblend_0.5",
+      "policy": "threshold",
+      "threshold": 0.6700000000000002,
+      "macro_f05": 0.9750088671754611
+    },
+    {
+      "name": "xgboost_reverse_rawblend_0.75",
+      "policy": "threshold",
+      "threshold": 0.6500000000000001,
+      "macro_f05": 0.9762518930219305
+    },
+    {
+      "name": "ensemble:lightgbm:xgboost",
+      "policy": "threshold",
+      "threshold": 0.6300000000000001,
+      "macro_f05": 0.9721723899216232
+    },
+    {
+      "name": "ensemble:lightgbm:lightgbm_reverse",
+      "policy": "threshold",
+      "threshold": 0.6600000000000001,
+      "macro_f05": 0.9760810353896664
+    },
+    {
+      "name": "ensemble:lightgbm:xgboost_reverse",
+      "policy": "threshold",
+      "threshold": 0.6100000000000001,
+      "macro_f05": 0.9760304455185432
+    },
+    {
+      "name": "ensemble:xgboost:lightgbm_reverse",
+      "policy": "threshold",
+      "threshold": 0.6500000000000001,
+      "macro_f05": 0.9759437077202198
+    },
+    {
+      "name": "ensemble:xgboost:xgboost_reverse",
+      "policy": "threshold",
+      "threshold": 0.6400000000000001,
+      "macro_f05": 0.975793854811311
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "threshold",
+      "threshold": 0.7200000000000002,
+      "macro_f05": 0.9764903477682485
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": 0.0,
+      "temperature": 1.0,
+      "macro_f05": 0.976453550869451
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": -0.3,
+      "temperature": 1.0,
+      "macro_f05": 0.9767601629029483
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": -0.6,
+      "temperature": 1.0,
+      "macro_f05": 0.9763664932324225
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": -0.9,
+      "temperature": 1.0,
+      "macro_f05": 0.9765524788534038
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": 0.3,
+      "temperature": 1.0,
+      "macro_f05": 0.9761766697280058
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": 0.0,
+      "temperature": 0.8,
+      "macro_f05": 0.9764473073346635
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": -0.3,
+      "temperature": 0.8,
+      "macro_f05": 0.976550704008349
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": 0.0,
+      "temperature": 1.2,
+      "macro_f05": 0.9763374882130007
+    },
+    {
+      "name": "lightgbm_reverse",
+      "policy": "expected_f05",
+      "bias": -0.3,
+      "temperature": 1.2,
+      "macro_f05": 0.976699978229338
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": 0.0,
+      "temperature": 1.0,
+      "macro_f05": 0.9762476583703749
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": -0.3,
+      "temperature": 1.0,
+      "macro_f05": 0.9768187093447704
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": -0.6,
+      "temperature": 1.0,
+      "macro_f05": 0.9764736645100527
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": -0.9,
+      "temperature": 1.0,
+      "macro_f05": 0.9761491343652046
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": 0.3,
+      "temperature": 1.0,
+      "macro_f05": 0.9763268693903486
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": 0.0,
+      "temperature": 0.8,
+      "macro_f05": 0.9763897691709097
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": -0.3,
+      "temperature": 0.8,
+      "macro_f05": 0.9766852489741219
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": 0.0,
+      "temperature": 1.2,
+      "macro_f05": 0.9763091371446093
+    },
+    {
+      "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+      "policy": "expected_f05",
+      "bias": -0.3,
+      "temperature": 1.2,
+      "macro_f05": 0.9767401191279907
+    }
+  ],
+  "champion": {
+    "name": "ensemble:lightgbm_reverse:xgboost_reverse",
+    "policy": "expected_f05",
+    "bias": -0.3,
+    "temperature": 1.0,
+    "macro_f05": 0.9768187093447704
+  },
+  "original_threshold_baseline": 0.9683669835026931,
+  "check_evaluated": false,
+  "audit_evaluated": false
+}

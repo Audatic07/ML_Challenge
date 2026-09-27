@@ -148,3 +148,11 @@ def test_v6_queue_end_to_end(tmp_path):
     e = pl.read_parquet(store / "ens" / "score" / "v6score-test-US-000.parquet")
     assert np.allclose(e["p"], (a["p"] + b["p"]) / 2, atol=1e-6)
     check_final("ens", 4)
+    # the same average with a tighter stage-1 floor keeps exactly the survivors above it
+    run(["src.v6_train", "ensemble", "--root", str(store), "--source", "v6,v6v", "--prefix", "ens2", "--threshold", "0.5",
+         "--floor", "0.3"])
+    worker("ens2", "ens2")
+    e2 = pl.read_parquet(store / "ens2" / "score" / "v6score-test-US-000.parquet")
+    assert e2.equals(e.filter(pl.col("p1") >= 0.3))
+    assert json.loads((store / "ens2" / "model" / "model_manifest.json").read_text())["cascade"]["floor"] == 0.3
+    check_final("ens2", 4)

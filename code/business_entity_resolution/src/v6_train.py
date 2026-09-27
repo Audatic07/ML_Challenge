@@ -354,6 +354,8 @@ def run_average(task, store, ctx):
             raise ValueError("Ensemble members scored different survivors")
     p = np.mean([x["p"].to_numpy() for x in parts], axis=0).astype(np.float32)
     out = base.select("s1", "t", "target_id", "p1").with_columns(pl.Series("p", p))
+    # A higher stage-1 floor is a subset of the members' cut: same v5.1 order, fewer survivors.
+    out = out.filter(pl.col("p1") >= task.get("floor", 0.0))
     local = ctx.work / f"{task['id']}.parquet"
     out.write_parquet(local)
     store.upload(local, f"score/{task['id']}.parquet")
@@ -407,6 +409,7 @@ def main():
         manifests = [m.get_json("model/model_manifest.json") for m in stores]
         if len({json.dumps(m["cascade"], sort_keys=True) for m in manifests}) != 1:
             parser.error("members use different cuts")
+        cascade = dict(manifests[0]["cascade"], floor=max(manifests[0]["cascade"]["floor"], args.floor))
         ids = sorted(n[:-5] for n in stores[0].list("tasks") if n.startswith("v6score-"))
         for m in stores:
             missing = [i for i in ids if not m.exists(f"done/{i}.json")]
@@ -417,9 +420,10 @@ def main():
                                                                                       "threshold": args.threshold})))
         target.put_json("model/model_manifest.json", {
             "version": VERSION + "-mean", "members": [[m, x["model_sha256"]] for m, x in zip(members, manifests)],
-            "features": manifests[0]["features"], "cascade": manifests[0]["cascade"], "threshold": args.threshold,
+            "features": manifests[0]["features"], "cascade": cascade, "threshold": args.threshold,
             "model_sha256": digest([x["model_sha256"] for x in manifests]), "source_prefix": base["source_prefix"]})
-        tasks = [{"id": i, "kind": "v6avg", "input": i, "members": members, "priority": 1, "min_mem_gb": 4} for i in ids]
+        tasks = [{"id": i, "kind": "v6avg", "input": i, "members": members, "floor": cascade["floor"], "priority": 1,
+                  "min_mem_gb": 4} for i in ids]
         tasks.append({"id": "final", "kind": "final", "inputs": ids, "requires": ids, "priority": 2, "min_mem_gb": 60})
         for task in tasks:
             target.put_json(f"tasks/{task['id']}.json", task)

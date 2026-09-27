@@ -1,0 +1,10 @@
+{
+ "test_queries": 1732544,
+ "matched_queries": 1624730,
+ "matched_pairs": 5522613,
+ "candidate_pairs": 51976320,
+ "threshold": 0.72,
+ "model_sha256": "eec93e350d320b46453d69f47010f07883c0b3e5eb6dd47d2dda0153f46cd982",
+ "validator_exit": 0,
+ "validator_output": "ML Challenge 2026 \u2014 submission validator\n  test dir: /home/ec2-user/SageMaker/er/data/student_resource/dataset/test\n  required S1 entities: 1732544\n  valid S2/S3 match IDs: 9969589\n  matching_results.tsv: 1732544 rows (107814 empty, 1624730 non-empty).\n  candidate_pairs.tsv: 1732544 rows (0 empty, 1732544 non-empty).\n\nPASS \u2014 no blocking issues found. Safe to submit.\n"
+}

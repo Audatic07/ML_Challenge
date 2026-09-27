@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 40,
+  "epoch": 41,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T15:39:24.277840+00:00",
+  "updated_at": "2026-09-27T15:41:17.246786+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -31,7 +31,7 @@
   },
   "contract_version": "2.0-proposed",
   "contract_accepted": false,
-  "integration_commit": "703b605",
+  "integration_commit": "b99931f",
   "dataset_manifest": null,
   "split_manifest": null,
   "incumbent_manifest": null,
@@ -883,6 +883,12 @@
       "at": "2026-09-27T14:34:04.958995+00:00",
       "decision": "main fast-forwarded 46e7147 -> 703b605: V7 WP2/WP3/WP1 (09533fd, the audited B2 release code) plus coordination/evidence/v7/claude-abhigyan-20260927-1600.md",
       "basis": "Abhigyan in chat; V7 tests passed on 09533fd before integration; evidence-only commit on top"
+    },
+    {
+      "id": "INTEGRATE-V7-B4",
+      "at": "2026-09-27T15:41:17.246786+00:00",
+      "decision": "main 703b605 -> b99931f: merge of V7 F2 (533bcae, the audited B4 release code) plus B4 evidence",
+      "basis": "Abhigyan in chat: push the work so the team lead can submit; F2/B4 tests passed on 533bcae"
     }
   ],
   "operator_dependencies": [

@@ -14,7 +14,7 @@ import lightgbm as lgb
 import numpy as np
 import polars as pl
 
-from _common import WORK, macro
+from _common import THREADS, WORK, macro
 
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 tag = args[0] if args else "K10_f0"
@@ -30,7 +30,7 @@ fold = (feat["s1"].hash(seed=7) % 2).to_numpy()
 X = feat.select(names).to_numpy().astype(np.float32)
 y = feat["y"].to_numpy()
 params = dict(objective="binary", learning_rate=0.05, num_leaves=63, min_data_in_leaf=40, feature_fraction=0.8,
-              bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0, verbose=-1, num_threads=20, seed=1)
+              bagging_fraction=0.8, bagging_freq=1, lambda_l2=1.0, verbose=-1, num_threads=THREADS, seed=1)
 oof = np.zeros(len(y), dtype=np.float32)
 iterations = []
 for f in (0, 1):

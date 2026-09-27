@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 27,
+  "epoch": 28,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T12:14:45.623632+00:00",
+  "updated_at": "2026-09-27T12:37:59.442743+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -180,16 +180,29 @@
       "base_sha": "a35aead (codex/s2-model-claude-newacct-20260927-1155) merged with 42714bb (V6-TRAIN, unchanged)",
       "created_at": "2026-09-27T14:53:43.876736+05:30",
       "scope": "Stage 2 stacked on the frozen v6 ens3 survivors: tune gate ens3 vs ens3+stage2 on the same tune S1 and survivors; only if it passes, frozen release manifest, shard-aware test inference on assigned workers and a collector. No audit access, no V6-TRAIN paths.",
-      "next_checkpoint": "tune gate on the canonical ens3 inputs (needs read access to the ens3 plan/manifest, member tune_scores and score shards); then launch approval",
+      "next_checkpoint": "WP2 merged by the 18:55-19:05 feature freeze",
       "code_sha": "b607e93",
-      "checkpoint_at": "2026-09-27T16:50:31.824088+05:30",
+      "checkpoint_at": "2026-09-27T12:37:59.442743+00:00",
       "transfer": {
         "from": "claude-newacct-20260927-1155",
         "at": "2026-09-27T16:50:31.824088+05:30",
         "basis": "Akash's written handoff relayed by Abhigyan; paths released on recording"
       },
       "published_smoke_commit": "a35aead: code files identical to Akash's verified tree f32eb112; the published tree 14e5d7ad differs by one line in his evidence note only",
-      "access_note": "Read access to the ens3 plan/manifest, member tune_scores and score shards is live (see V7-PLAN-REV3-20260927)."
+      "access_note": "Read access to the ens3 plan/manifest, member tune_scores and score shards is live (see V7-PLAN-REV3-20260927).",
+      "delegated_subtasks": [
+        {
+          "task_id": "V7-WP2",
+          "session_id": "claude-abhigyan-20260927-1600",
+          "branch": "codex/v7-wp2-claude-abhigyan-20260927",
+          "at": "2026-09-27T12:37:59.442743+00:00",
+          "paths": [
+            "code/business_entity_resolution/tools/v6_analysis/stage2_release.py",
+            "code/business_entity_resolution/tests/test_v6_stage2.py"
+          ],
+          "basis": "V7 plan revision 3 (main 2e00a5c) WP2: protocol and release hardening; paths already held under S2-MODEL"
+        }
+      ]
     },
     {
       "task_id": "S2-INPUT-GATE-ABD",

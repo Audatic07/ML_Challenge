@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 16,
+  "epoch": 17,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T09:23:43.876736+00:00",
+  "updated_at": "2026-09-27T09:29:39.660950+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -50,6 +50,12 @@
       "session_id": "claude-newacct-20260927-1155",
       "branch": "not yet published (db4056b + saved smoke patch)",
       "status": "active; S2-MODEL smoke run (Akash)"
+    },
+    {
+      "session_id": "abhigyan-s2-input-gate-20260927",
+      "owner": "Abhigyan",
+      "branch": "not yet created; coordination claim only; implementing session to record execution branch before implementation",
+      "status": "claimed for planning; implementation/execution not started"
     }
   ],
   "claims": [
@@ -143,6 +149,32 @@
       "next_checkpoint": "smoke run results on the updated prerun manifest",
       "recorded_by": "claude-20260927-1420 at the user's relayed request (Akash); paths inferred from the stage-2 plan review Tasks 2-3, owner to correct",
       "no_overlap_with": "V6-TRAIN (src/v6_train.py, tools/v6_ensemble_eval.py, tests/test_v6_train.py)"
+    },
+    {
+      "task_id": "S2-INPUT-GATE-ABD",
+      "owner": "Abhigyan",
+      "session_id": "abhigyan-s2-input-gate-20260927",
+      "branch": "not yet created; coordination claim only; implementing session to record execution branch before implementation",
+      "paths": [
+        "tools/s2_input_gate_abd.py",
+        "coordination/evidence/s2-input-gate-abd/"
+      ],
+      "base_sha": "db4056b04647948c307a93ca988534a21d06f5ee",
+      "review_plan_sha": "1e75a4c339c77451490acfadbed5f2ab2259d7b7",
+      "created_at": "2026-09-27T09:29:39.660950+00:00",
+      "scope": "Bounded full score-artifact structural/coverage gate on Abhigyan copied v5.1 inputs; no CV, training, France smoke, audit access, model-quality validation or proof of target row identity.",
+      "inputs": [
+        "s3://amazon-sagemaker-548171705578-ap-south-1-amlc26-abd/shared/er-v51-20260927/plan.json",
+        "s3://amazon-sagemaker-548171705578-ap-south-1-amlc26-abd/shared/er-v51-20260927/model/",
+        "s3://amazon-sagemaker-548171705578-ap-south-1-amlc26-abd/shared/er-v51-20260927/score/"
+      ],
+      "output_s3_prefix": "s3://amazon-sagemaker-548171705578-ap-south-1-amlc26-abd/shared/er-v6-input-gate-abd-20260927/",
+      "acceptance_criteria": "1. Derive expected score shards and query coverage from plan.json plus applicable manifests; record input versions/hashes and the derivation.\n2. Verify missing, unexpected and duplicate coverage within and across shards. Repeated query IDs across candidate rows are expected; distinguish those from duplicate pair keys, overlapping shard assignments and missing expected queries. Respect documented zero-candidate handling.\n3. Verify required columns/types, null constraints, finite scores and valid query/target index ranges under the actual documented schema, partition, country and source conventions.\n4. Report per-shard, per-country and overall counts with explicit PASS/FAIL reasons. Missing metadata or inability to establish a bound must be reported as an incomplete/failed gate, not silently treated as PASS.\n5. Preserve all inputs. Write only the verifier report and execution metadata to the output prefix below; do not upload copied records, predictions, models or input data as verification output.\n6. Process Parquet in bounded record batches. Bound cross-batch/query/duplicate bookkeeping as well; one shard at a time does not establish safety on a 4 GiB machine. Record configured batch size, resource limits and measured peak memory/runtime when execution is separately authorized.\n7. State clearly that success establishes structural/coverage checks only, not model quality, cryptographic equality to the original source, or target row identity/order correctness without separate canonical evidence.",
+      "next_checkpoint": "Inspect bounded direct-verifier design, memory/resource feasibility and execution proposal; implementation not yet present, execution not authorized.",
+      "deliverable": "Per-shard, per-country and overall structural/coverage report with explicit PASS/FAIL reasons plus execution metadata, preserving inputs and using bounded Parquet record batches.",
+      "authorization": "User explicitly authorized ONLY serialized coordination claim publication; no model code change, compute launch, quota request, dependency change, AWS job or spending.",
+      "recorded_by": "Codex coordination session on behalf of Abhigyan; logical owner session identifier assigned for this claim, not a claim that another agent was started.",
+      "evidence": "coordination/evidence/s2-input-gate-abd/claim-request.md"
     }
   ],
   "integration_claim": null,
@@ -416,6 +448,18 @@
       "summary": "Survivor-specialist v6 LightGBM on v5.1 cascade survivors (feature reuse via source_prefix); final scorer of the survivor candidate set",
       "code_sha": "6b0ed7b",
       "evidence": []
+    },
+    {
+      "id": "S2-INPUT-GATE-ABD",
+      "status": "claimed",
+      "owner_session": "abhigyan-s2-input-gate-20260927",
+      "depends_on": [],
+      "optional": true,
+      "summary": "Bounded full score-artifact structural/coverage gate on Abhigyan copied v5.1 inputs; no CV, training, France smoke, audit access, model-quality validation or proof of target row identity.",
+      "code_sha": null,
+      "evidence": [
+        "coordination/evidence/s2-input-gate-abd/claim-request.md"
+      ]
     }
   ],
   "active_job_reservations": [

@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 28,
+  "epoch": 29,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T12:37:59.442743+00:00",
+  "updated_at": "2026-09-27T12:49:12.176896+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -200,7 +200,8 @@
             "code/business_entity_resolution/tools/v6_analysis/stage2_release.py",
             "code/business_entity_resolution/tests/test_v6_stage2.py"
           ],
-          "basis": "V7 plan revision 3 (main 2e00a5c) WP2: protocol and release hardening; paths already held under S2-MODEL"
+          "basis": "V7 plan revision 3 (main 2e00a5c) WP2: protocol and release hardening; paths already held under S2-MODEL",
+          "code_sha": "5ea334e"
         }
       ]
     },
@@ -229,6 +230,20 @@
       "authorization": "User explicitly authorized ONLY serialized coordination claim publication; no model code change, compute launch, quota request, dependency change, AWS job or spending.",
       "recorded_by": "Codex coordination session on behalf of Abhigyan; logical owner session identifier assigned for this claim, not a claim that another agent was started.",
       "evidence": "coordination/evidence/s2-input-gate-abd/claim-request.md"
+    },
+    {
+      "task_id": "V7-WP3",
+      "session_id": "claude-abhigyan-20260927-1600",
+      "branch": "codex/v7-wp3-claude-abhigyan-20260927",
+      "paths": [
+        "code/business_entity_resolution/tools/v7_audit.py",
+        "code/business_entity_resolution/tests/test_v7_audit.py"
+      ],
+      "base_sha": "46e7147 (main)",
+      "created_at": "2026-09-27T12:49:12.176896+00:00",
+      "scope": "V7 plan revision 3 WP3: label-free lean audit survivors (v5.1 p1, fixed cut, V6 member mean) with a query ledger, and the one-time G3 evaluator; no audit labels read before G3",
+      "next_checkpoint": "survivors code merged by the 18:55-19:05 freeze; extraction run on an assigned machine",
+      "deliverable": "tools/v7_audit.py survivors|gate plus a fixture test"
     }
   ],
   "integration_claim": null,

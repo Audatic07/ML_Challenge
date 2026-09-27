@@ -896,6 +896,8 @@ class Queue:
 
 def worker(args):
     """Serve the queues listed (in priority order) by control/queues of the home prefix."""
+    from .v6_train import RUNNERS as V6_RUNNERS  # v6 task kinds (imported late: v6_train imports this module)
+    RUNNERS.update(V6_RUNNERS)
     home = Store(args.bucket, args.prefix, args.root)
     holder = {"store": home}
     args.work.mkdir(parents=True, exist_ok=True)
@@ -964,7 +966,7 @@ def worker(args):
         log(f"START {queue.prefix}:{task['id']}")
         started = time.monotonic()
         try:
-            if task["kind"] in ("train", "final", "bench"):
+            if task["kind"] in ("train", "final", "bench", "v6train", "v6audit"):
                 ctx.drop_catalog()
             info = RUNNERS[task["kind"]](task, store, ctx)
             store.put_json(f"done/{task['id']}.json", {"worker": args.name, "seconds": time.monotonic() - started,

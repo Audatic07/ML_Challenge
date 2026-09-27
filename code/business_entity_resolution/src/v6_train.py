@@ -2,6 +2,7 @@
 
     python -m src.v6_train plan  --bucket B --source SRC --prefix DST [--train-n 15 --n 12 --floor 0.001]
     python -m src.v6_train apply --bucket B --source DST --prefix DST2 --n N --floor F [--threshold T]
+    python -m src.v6_train variant --bucket B --source DST --prefix DST3 --seed S [--leaves L ...]
 
 Stage 1 is the released v5.1 pair model of the run at SRC. It scores every retrieved
 candidate (about 256 per S1) and keeps the top `n` of each S1 by probability, ties broken
@@ -19,7 +20,8 @@ Queue tasks (this prefix P, source run S = plan["source_prefix"]):
 
 The v5.1 model saw the fit rows in training, so its p only chooses survivors and is never a
 v6 feature. Stop and tune rows are out of sample for both models. The audit stays closed.
-`apply` republishes test scoring for another cut with the same trained model.
+`apply` republishes test scoring for another cut with the same trained model. `variant` trains
+another model (seed or LightGBM settings) on the survivors of a finished queue, for ensembles.
 """
 from __future__ import annotations
 
@@ -151,9 +153,10 @@ def run_train6(task, store, ctx):
     truth, excluded = truth_for(ctx.data, {"fit": fit, "stop": stop, "tune": tune}, heldout)
     fit_s, stop_s, tune_s = (pl.Series(x.astype(np.uint32)) for x in (fit, stop, tune))
     positive = truth.with_columns(pl.lit(1, pl.Int8).alias("y"))
+    surv = Store(store.bucket, plan.get("surv_prefix") or store.prefix, store.base_root)
     xf, yf, xs, ys, tune_parts = [], [], [], [], []
     for shard in task["inputs"]:
-        frame = read_shard(store, f"surv/{shard}.parquet", ctx)
+        frame = read_shard(surv, f"surv/{shard}.parquet", ctx)
         frame = frame.join(positive, on=["s1", "target_id"], how="left").with_columns(pl.col("y").fill_null(0))
         part = frame.filter(pl.col("s1").is_in(fit_s.implode()))
         if part.filter(pl.col("y") == 1).join(excluded, on="target_id", how="semi").height:
@@ -258,7 +261,7 @@ def score_tasks(feats, source_prefix):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("step", choices=["plan", "apply"])
+    parser.add_argument("step", choices=["plan", "apply", "variant"])
     parser.add_argument("--bucket")
     parser.add_argument("--root")
     parser.add_argument("--source", required=True, help="plan: finished v5.1 run; apply: finished v6 queue")
@@ -273,6 +276,7 @@ def main():
     parser.add_argument("--leaves", type=int, default=255)
     parser.add_argument("--min-leaf", type=int, default=50)
     parser.add_argument("--feature-fraction", type=float, default=0.8)
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
     source, target = Store(args.bucket, args.source, args.root), Store(args.bucket, args.prefix, args.root)
     if target.exists("plan.json"):
@@ -298,6 +302,29 @@ def main():
             task["requires"] = [r for r in task["requires"] if r != "v6train"]
             target.put_json(f"tasks/{task['id']}.json", task)
         return
+    lgb_settings = {"learning_rate": args.learning_rate, "num_leaves": args.leaves, "min_data_in_leaf": args.min_leaf,
+                    "feature_fraction": args.feature_fraction, "seed": args.seed}
+    if args.step == "variant":
+        # Another model on the survivors of a queue whose cut tasks are finished.
+        cut_ids = [n[:-5] for n in source.list("tasks") if n.startswith("v6cut-")]
+        missing = [c for c in cut_ids if not source.exists(f"done/{c}.json")]
+        if missing:
+            parser.error(f"{len(missing)} cut tasks of {args.source} are not finished")
+        settings = {k: v for k, v in base.items() if k not in ("plan_sha", "task_count", "created")}
+        settings.update(surv_prefix=args.source, variant_of=args.source, lgb=lgb_settings, rounds=args.rounds,
+                        patience=args.patience)
+        settings["plan_sha"] = digest(settings)
+        settings["created"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        train = source.get_json("tasks/v6train.json")
+        tasks = [dict(train, requires=[])] + score_tasks(
+            {n[:-5]: {"split": "test"} for n in Store(args.bucket, base["source_prefix"], args.root).list("tasks")
+             if n.startswith("feat-test-")}, base["source_prefix"])
+        settings["task_count"] = len(tasks)
+        target.put_json("plan.json", settings)
+        for task in tasks:
+            target.put_json(f"tasks/{task['id']}.json", task)
+        log(f"published variant {args.prefix}: {len(tasks)} tasks, lgb {lgb_settings}")
+        return
     manifest = source.get_json("model/model_manifest.json")
     settings = {k: v for k, v in base.items() if k not in ("plan_sha", "task_count", "created")}
     if feature_list(settings) != manifest["features"]:
@@ -306,8 +333,7 @@ def main():
     settings.update(version=VERSION, source_prefix=args.source, source_plan_sha=base["plan_sha"],
                     stage1_model_sha256=manifest["model_sha256"], train_n=args.train_n, apply_cut=apply_cut,
                     eval_cuts=cuts, rounds=args.rounds, patience=args.patience,
-                    lgb={"learning_rate": args.learning_rate, "num_leaves": args.leaves,
-                         "min_data_in_leaf": args.min_leaf, "feature_fraction": args.feature_fraction})
+                    lgb=lgb_settings)
     settings["plan_sha"] = digest(settings)
     settings["created"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     feats = {n[:-5]: source.get_json(f"tasks/{n}") for n in source.list("tasks") if n.startswith("feat-")}

@@ -113,3 +113,14 @@ def test_v6_queue_end_to_end(tmp_path):
     worker("v6b", "v6b")
     assert json.loads((store / "v6b" / "model" / "model_manifest.json").read_text())["threshold"] == 0.5
     check_final("v6b", 3)
+
+    # a seed variant trained on the same survivors, for ensembles
+    run(["src.v6_train", "variant", "--root", str(store), "--source", "v6", "--prefix", "v6v", "--seed", "7",
+         "--rounds", "60", "--patience", "20", "--leaves", "15", "--min-leaf", "5"])
+    worker("v6v", "v6v")
+    variant = json.loads((store / "v6v" / "model" / "model_manifest.json").read_text())
+    assert variant["params"]["seed"] == 7 and not (store / "v6v" / "surv").exists()
+    a = pl.read_parquet(store / "v6" / "model" / "tune_scores.parquet").sort("s1", "t")
+    b = pl.read_parquet(store / "v6v" / "model" / "tune_scores.parquet").sort("s1", "t")
+    assert a.select("s1", "t", "p1").equals(b.select("s1", "t", "p1"))
+    check_final("v6v", 4)

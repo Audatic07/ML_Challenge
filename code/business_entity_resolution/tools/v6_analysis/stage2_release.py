@@ -47,7 +47,8 @@ from src.v6_train import cut
 
 VERSION = "v7-head-1"
 WORKERS = ("abhigyan-r7i4xl", "aditya-worker", "akash-r5xl")
-FAMILIES = ("F0F1", "F0F1F3")
+FAMILIES = ("F0F1", "F0F1F3", "F0F1F2", "F0F1F3F2")
+TAGS = {"F0F1": "B1", "F0F1F3": "B2", "F0F1F2": "B3", "F0F1F3F2": "B4"}
 K_FOLDS = 5
 MONOTONE = ("p6", "p6_logit", "v51_p", "v51_logit")
 PARAMS = dict(objective="binary", learning_rate=0.05, num_leaves=63, min_data_in_leaf=40, feature_fraction=0.8,
@@ -89,7 +90,8 @@ def peak_rss_gb():
 
 def code_identity() -> dict:
     files = {"stage2_release.py": Path(__file__).resolve(), "v6_stage2.py": PACKAGE / "src" / "v6_stage2.py",
-             "text_norm_v5.py": PACKAGE / "src" / "text_norm_v5.py", "v7_population.py": PACKAGE / "src" / "v7_population.py"}
+             "text_norm_v5.py": PACKAGE / "src" / "text_norm_v5.py", "v7_population.py": PACKAGE / "src" / "v7_population.py",
+             "v7_decoy.py": PACKAGE / "src" / "v7_decoy.py"}
     ident = {name: sha256(path) for name, path in files.items() if path.exists()}
     try:
         ident["git_head"] = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PACKAGE, capture_output=True,
@@ -120,12 +122,25 @@ def target_frame(data: Path, split: str) -> pl.DataFrame:
 
 
 def population():
-    """WP1's module, or None until it is merged."""
+    """WP1's module (F3), or None until it is merged."""
     try:
         from src import v7_population
         return v7_population
     except ImportError:
         return None
+
+
+def decoy():
+    """The F2 module, or None until it is merged."""
+    try:
+        from src import v7_decoy
+        return v7_decoy
+    except ImportError:
+        return None
+
+
+def available_families() -> str:
+    return "F0F1" + ("F3" if population() else "") + ("F2" if decoy() else "")
 
 
 # ------------------------------------------------------------------ features
@@ -141,7 +156,8 @@ def check_cut(frame: pl.DataFrame, n: int, floor: float):
         raise SystemExit(f"shard does not follow the ens3 cut (min p1 {frame['p1'].min()}, max {per_s1} per S1)")
 
 
-def build_features(scored: pl.DataFrame, n: int, q_raw, t_raw, threads: int, families: str, index=None) -> pl.DataFrame:
+def build_features(scored: pl.DataFrame, n: int, q_raw, t_raw, threads: int, families: str, index=None,
+                   decoy_ctx=None) -> pl.DataFrame:
     """Features of already-cut survivors (s1, t, target_id, p1 = v5.1, p6 = ens3 mean), one row per pair."""
     surv = survivors(scored.select("s1", "t", "target_id", pl.col("p6").alias("p")), n)  # rank by p6
     qrows, trows = surv["s1"].unique().sort(), surv["t"].unique().sort()
@@ -158,6 +174,9 @@ def build_features(scored: pl.DataFrame, n: int, q_raw, t_raw, threads: int, fam
     if "F3" in families:
         rivals = population().rival_features(feat.select("s1", "t"), q_raw, t_raw, index, threads)
         feat = feat.join(rivals, on=["s1", "t"], how="left", maintain_order="left")
+    if "F2" in families:
+        decoys = decoy().decoy_features(feat.select("s1", "t"), q_raw, t_raw, decoy_ctx, feat["q_a_tset"], threads)
+        feat = feat.join(decoys, on=["s1", "t"], how="left", maintain_order="left")
     if len(feat) != len(scored):
         raise SystemExit("features do not cover every survivor exactly once")
     return feat
@@ -167,6 +186,8 @@ def feature_names(feat: pl.DataFrame, families: str) -> list[str]:
     names = [c for c in feat.columns if c not in ("s1", "t", "target_id", "y")]
     if "F3" not in families and population() is not None:
         names = [c for c in names if c not in set(population().F3_COLUMNS)]
+    if "F2" not in families and decoy() is not None:
+        names = [c for c in names if c not in set(decoy().F2_COLUMNS)]
     return names
 
 
@@ -304,8 +325,9 @@ def run_gate(args):
     out.mkdir(parents=True, exist_ok=True)
     data = Path(args.data)
     families = [f for f in args.families.split(",") if f]
-    if not families or set(families) - set(FAMILIES) or ("F0F1F3" in families and population() is None):
-        raise SystemExit(f"--families must be from {FAMILIES}; F0F1F3 needs src/v7_population.py")
+    have = available_families()
+    if not families or set(families) - set(FAMILIES) or any(x in f and x not in have for f in families for x in ("F3", "F2")):
+        raise SystemExit(f"--families must be from {FAMILIES} and use only available modules ({have})")
     plan, manifest, kept, inputs = load_ens3(Path(args.ens3), Path(args.members))
     cascade = manifest["cascade"]
     tune = np.asarray(plan["tune_rows"], dtype=np.uint32)
@@ -318,15 +340,17 @@ def run_gate(args):
     if args.expect_f and abs(g0 - args.expect_f) > 1e-4:
         raise SystemExit(f"G0 failed: V6 at its manifest threshold scores {g0:.5f}, expected {args.expect_f}")
     q_raw, t_raw = read_tsv(data / "train" / "train_source1.tsv"), target_frame(data, "train")
-    index = population().build_index(q_raw) if "F0F1F3" in families else None
-    feat = build_features(kept, cascade["n"], q_raw, t_raw, args.threads, families[-1], index)
+    union = "F0F1" + ("F3" if any("F3" in f for f in families) else "") + ("F2" if any("F2" in f for f in families) else "")
+    index = population().build_index(q_raw) if "F3" in union else None
+    decoy_ctx = decoy().build_context(t_raw) if "F2" in union else None
+    feat = build_features(kept, cascade["n"], q_raw, t_raw, args.threads, union, index, decoy_ctx)
     labels = gt.rename({"t": "target_id"}).with_columns(pl.lit(1, pl.Int8).alias("y"))
     feat = feat.join(labels, on=["s1", "target_id"], how="left", maintain_order="left").with_columns(pl.col("y").fill_null(0))
     fold, inner = folds_for(feat, q_raw)
     print(f"features {len(feat):,} rows x {len(feat.columns) - 4} t={time.time() - started:.0f}s", flush=True)
     rungs = {}
     for fam in families:
-        tag = {"F0F1": "B1", "F0F1F3": "B2"}[fam]
+        tag = TAGS[fam]
         names = feature_names(feat, fam)
         oof, models, monotone = cross_fit(feat, names, fold, inner, out / "model", tag, args.threads)
         scored = feat.select("s1", "t", "target_id", "p6").with_columns(pl.Series("p7", oof.astype(np.float32)))
@@ -340,9 +364,11 @@ def run_gate(args):
         rungs[tag] = {"families": fam, "features": names, "monotone": monotone, "models": models, "alpha": alpha,
                       "threshold": th, "macro_f05": f, "paired_vs_v6": paired(per_v6, per, country),
                       "options": [{"alpha": o[1], "threshold": o[2], "macro_f05": o[0]} for o in options]}
-    chosen = "B1" if "B1" in rungs else "B2"
-    if "B1" in rungs and "B2" in rungs and rungs["B2"]["macro_f05"] - rungs["B1"]["macro_f05"] >= B2_MIN_OVER_B1:
-        chosen = "B2"
+    # Rungs run in the given order; a later (richer) rung replaces the choice only if it beats it by >= 0.0003.
+    chosen = TAGS[families[0]]
+    for fam in families[1:]:
+        if rungs[TAGS[fam]]["macro_f05"] - rungs[chosen]["macro_f05"] >= B2_MIN_OVER_B1:
+            chosen = TAGS[fam]
     d = rungs[chosen]["paired_vs_v6"]
     g2 = g2_pass(d)
     gate = {"version": VERSION, "tune_queries": len(tune), "survivor_rows": len(kept), "pairs_per_query": len(kept) / len(tune),
@@ -446,9 +472,10 @@ class Split:
         self.split = "train" if split in ("tune", "audit") else "test"
         self.q_raw = read_tsv(data / self.split / f"{self.split}_source1.tsv")
         self.t_raw = target_frame(data, self.split)
-        pop = population()
+        pop, dec = population(), decoy()
         self.index = pop.build_index(self.q_raw) if pop else None
-        self.families = "F0F1F3" if pop else "F0F1"
+        self.decoy_ctx = dec.build_context(self.t_raw) if dec else None
+        self.families = available_families()
         self.index_digest = pop.index_digest(self.index) if pop else None
         self.threads = threads
 
@@ -470,7 +497,7 @@ def cached_features(split: Split, source: Path, cache: Path | None, n: int, floo
             meta = json.loads(meta_path.read_text())
             if {k: meta.get(k) for k in pins} == pins and meta.get("output_sha256") == sha256(path):
                 return frame, pl.read_parquet(path)
-    feat = build_features(frame, n, split.q_raw, split.t_raw, split.threads, split.families, split.index)
+    feat = build_features(frame, n, split.q_raw, split.t_raw, split.threads, split.families, split.index, split.decoy_ctx)
     if cache is not None:
         cache.mkdir(parents=True, exist_ok=True)
         tmp = cache / f"{source.stem}.parquet.tmp"
@@ -536,8 +563,9 @@ def run_predict(args):
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     split = Split(Path(args.data), "test", args.threads)
-    if "F3" in release["families"] and "F3" not in split.families:
-        raise SystemExit("this machine lacks the F3 module the release needs")
+    for family in ("F3", "F2"):
+        if family in release["families"] and family not in split.families:
+            raise SystemExit(f"this machine lacks the {family} module the release needs")
     policy = release["candidate_policy"]
     country = split.q_raw["country"]
     for shard in shards:
@@ -665,7 +693,7 @@ def run_collect(args):
         seen |= s1
         pairs.append(frame.select("s1", "t", "target_id"))
         frame.select("s1", "t", "target_id", pl.col("s").alias("p")).write_parquet(stage / "score" / f"{shard}.parquet")
-    pins = {json.dumps({k: m["code"].get(k) for k in ("git_head", "stage2_release.py", "v6_stage2.py", "v7_population.py")}
+    pins = {json.dumps({k: m["code"].get(k) for k in ("git_head", "stage2_release.py", "v6_stage2.py", "v7_population.py", "v7_decoy.py")}
                        | {"index": m.get("index_digest"), "families": m.get("families")}, sort_keys=True)
             for _, m in found.values()}
     if len(pins) != 1:

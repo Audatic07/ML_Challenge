@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 36,
+  "epoch": 37,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T14:22:46.107338+00:00",
+  "updated_at": "2026-09-27T14:31:51.454820+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -288,7 +288,13 @@
       "next_checkpoint": "B4 gate on the notebook"
     }
   ],
-  "integration_claim": null,
+  "integration_claim": {
+    "session_id": "claude-abhigyan-20260927-1600",
+    "at": "2026-09-27T14:31:51.454820+00:00",
+    "integrating": "09533fd (V7 WP2+WP3+WP1, the code of the audited B2 release) plus aggregate V7 evidence",
+    "method": "fast-forward of main 46e7147, combined V7 and V6 tests before push",
+    "basis": "Abhigyan in chat: push V7 to GitHub"
+  },
   "submission_claim": null,
   "tasks": [
     {

@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 13,
+  "epoch": 14,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T08:56:21.180461+00:00",
+  "updated_at": "2026-09-27T09:05:02.413336+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -117,9 +117,10 @@
       ],
       "base_sha": "db4056b (codex/stage2-claude-20260927-1130)",
       "created_at": "2026-09-27T08:56:21.180461+00:00",
-      "next_checkpoint": "survivor-training code + local synthetic test; then launch er-v6-20260927 on er-v5-r7i",
+      "next_checkpoint": "v6train tune metrics (v6 vs v5.1 at the same cut), then 88 test survivor shards + final TSVs",
       "deliverable": "v6 LightGBM trained on v5.1 stage-1 survivors (top-20 by v5.1 p on fit), reusing shared/er-v51-20260927/feat; tune F/U/candidates per cut policy vs v5.1 at the same cut; test survivor scores + final TSVs in the v5.1 score format so stage-2 work can consume them",
-      "not_touched": "src/v6_stage2.py, tools/v6_analysis/ (stage-2 path stays with its own owner)"
+      "not_touched": "src/v6_stage2.py, tools/v6_analysis/ (stage-2 path stays with its own owner)",
+      "code_sha": "6b0ed7b"
     }
   ],
   "integration_claim": null,
@@ -391,7 +392,7 @@
       "depends_on": [],
       "optional": true,
       "summary": "Survivor-specialist v6 LightGBM on v5.1 cascade survivors (feature reuse via source_prefix); final scorer of the survivor candidate set",
-      "code_sha": null,
+      "code_sha": "6b0ed7b",
       "evidence": []
     }
   ],
@@ -482,9 +483,18 @@
       "data": "provided dataset only; existing private bucket; reads shared/er-v51-20260927/{feat,score,model} read-only",
       "output_s3_prefix": "shared/er-v6-20260927/ (home prefix of this worker via control/prefix-er-v5-r7i)",
       "shutdown": "control/stop + control/stop-instances in the v6 home prefix (worker exits after its task, bootstrap stops the instance); fallback aws sagemaker stop-notebook-instance",
-      "status": "reserved; not started",
+      "status": "running",
       "created_at": "2026-09-27T08:56:21.180461+00:00",
-      "authorization": "User in chat 2026-09-27 14:20 IST: 'You can start training the improvement of v5.1, the v6 model.'"
+      "authorization": "User in chat 2026-09-27 14:20 IST: 'You can start training the improvement of v5.1, the v6 model.'",
+      "job_started_at_utc": "2026-09-27T09:04:42Z",
+      "source_code_sha": "6b0ed7b",
+      "code_tar_sha256": "0ffe176f259af7eeae290aae17f7b4f8afb15e7ea8cf2575a08c60f5ce8ce50a",
+      "plan_sha": "e1d3a0849855a1e1bf45acfc852ac5ec064a74093ba033bfe9cd60533e2ed912",
+      "plan": "117 tasks: 27 v6cut (train shards), v6train, 88 v6score, final; train_n 15, apply cut top 12 p>=0.001; LightGBM lr 0.06, 255 leaves, <=5000 rounds, patience 150",
+      "control_files": [
+        "shared/er-v5-20260927/control/prefix-er-v5-r7i -> shared/er-v6-20260927 (remove after the job)",
+        "shared/er-v6-20260927/control/stop-instances"
+      ]
     }
   ],
   "submission_history": [],

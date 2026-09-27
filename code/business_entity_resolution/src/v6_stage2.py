@@ -98,8 +98,8 @@ def features(surv: pl.DataFrame, s1_text: pl.DataFrame, tg_text: pl.DataFrame, w
     p = surv["p"].to_numpy()
     q = surv.with_columns(
         pl.col("p").max().over("s1").alias("p_max"),
-        pl.col("p").sort(descending=True).get(1).over("s1").fill_null(0).alias("p_2"),
-        pl.col("p").sort(descending=True).get(2).over("s1").fill_null(0).alias("p_3"),
+        pl.col("p").sort(descending=True).get(1, null_on_oob=True).over("s1").fill_null(0).alias("p_2"),
+        pl.col("p").sort(descending=True).get(2, null_on_oob=True).over("s1").fill_null(0).alias("p_3"),
         pl.col("p").sum().over("s1").alias("p_sum"),
         (pl.col("p") >= 0.5).sum().over("s1").cast(pl.Float32).alias("n_p50"),
         (pl.col("p") >= 0.9).sum().over("s1").cast(pl.Float32).alias("n_p90"),

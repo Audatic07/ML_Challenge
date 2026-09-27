@@ -14,7 +14,7 @@ import time
 import numpy as np
 import polars as pl
 
-from _common import DATA, WORK, read_tsv
+from _common import DATA, THREADS, WORK, read_tsv
 from src.v6_stage2 import features, survivors, text_views
 
 
@@ -51,7 +51,7 @@ def main():
     print(f"normalized S1={len(q_text):,} targets={len(t_text):,} t={time.time()-started:.0f}s", flush=True)
     tag = f"K{k}_f{floor:g}"
     if split == "tune":
-        feat = features(surv, q_text, t_text, workers=20)
+        feat = features(surv, q_text, t_text, workers=THREADS)
         labels = pl.read_parquet(WORK / "tune_labeled.parquet", columns=["s1", "t", "y"]).rename({"t": "target_id"})
         feat = feat.join(labels, on=["s1", "target_id"], how="left").with_columns(pl.col("y").fill_null(0))
         feat.write_parquet(WORK / f"s2_tune_{tag}.parquet")
@@ -65,7 +65,7 @@ def main():
         part = surv.filter((pl.col("s1") >= first) & (pl.col("s1") < first + chunk))
         if path.exists() or not len(part):
             continue
-        features(part, q_text, t_text, workers=20).write_parquet(path)
+        features(part, q_text, t_text, workers=THREADS).write_parquet(path)
         print(f"chunk {first // chunk}: {len(part):,} rows t={time.time()-started:.0f}s", flush=True)
 
 

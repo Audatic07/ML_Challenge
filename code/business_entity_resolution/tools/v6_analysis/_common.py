@@ -25,6 +25,7 @@ if str(PACKAGE) not in sys.path:
 WORK = Path(os.environ.get("ER_V6_WORK", "work-v6"))
 DATA = Path(os.environ.get("ER_DATA_DIR", "student_resource/dataset"))
 THRESHOLD = 0.785  # v5.1 full-union threshold from model_manifest.json
+THREADS = int(os.environ.get("ER_V6_THREADS", "20"))  # RapidFuzz and LightGBM threads
 
 
 def read_tsv(path, **kwargs) -> pl.DataFrame:

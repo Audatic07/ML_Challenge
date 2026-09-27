@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "epoch": 15,
+  "epoch": 16,
   "phase": "development",
   "published": true,
-  "updated_at": "2026-09-27T09:13:42.418600+00:00",
+  "updated_at": "2026-09-27T09:23:43.876736+00:00",
   "objective": {
     "metric": "macro_per_s1_f0.5",
     "target": 0.98,
@@ -45,6 +45,11 @@
       "session_id": "claude-20260927-1420",
       "branch": "codex/v6-train-claude-20260927-1420",
       "status": "active; V6-TRAIN (user-approved training of the v5.1 successor)"
+    },
+    {
+      "session_id": "claude-newacct-20260927-1155",
+      "branch": "not yet published (db4056b + saved smoke patch)",
+      "status": "active; S2-MODEL smoke run (Akash)"
     }
   ],
   "claims": [
@@ -121,6 +126,23 @@
       "deliverable": "v6 LightGBM trained on v5.1 stage-1 survivors (top-20 by v5.1 p on fit), reusing shared/er-v51-20260927/feat; tune F/U/candidates per cut policy vs v5.1 at the same cut; test survivor scores + final TSVs in the v5.1 score format so stage-2 work can consume them",
       "not_touched": "src/v6_stage2.py, tools/v6_analysis/ (stage-2 path stays with its own owner)",
       "code_sha": "6b0ed7b"
+    },
+    {
+      "task_id": "S2-MODEL",
+      "session_id": "claude-newacct-20260927-1155",
+      "branch": "not yet published; base db4056b04647948c307a93ca988534a21d06f5ee plus the saved smoke patch",
+      "paths": [
+        "code/business_entity_resolution/src/v6_stage2.py",
+        "code/business_entity_resolution/tests/test_v6_stage2.py",
+        "code/business_entity_resolution/tools/v6_analysis/",
+        "coordination/evidence/s2-model/"
+      ],
+      "base_sha": "db4056b04647948c307a93ca988534a21d06f5ee",
+      "created_at": "2026-09-27T09:23:43.876736+00:00",
+      "scope": "baseline reproduction, stage-two CV and one France shard; no full inference or additional workers",
+      "next_checkpoint": "smoke run results on the updated prerun manifest",
+      "recorded_by": "claude-20260927-1420 at the user's relayed request (Akash); paths inferred from the stage-2 plan review Tasks 2-3, owner to correct",
+      "no_overlap_with": "V6-TRAIN (src/v6_train.py, tools/v6_ensemble_eval.py, tests/test_v6_train.py)"
     }
   ],
   "integration_claim": null,
@@ -351,8 +373,8 @@
     },
     {
       "id": "S2-MODEL",
-      "status": "ready",
-      "owner_session": null,
+      "status": "claimed",
+      "owner_session": "claude-newacct-20260927-1155",
       "depends_on": [],
       "optional": true,
       "summary": "Stage-2 sibling model + expected-F selection on test survivors; +0.27 tune over S2-CUT (0.9705)",
@@ -508,6 +530,20 @@
         "prefix_overrides": "shared/er-v5-20260927/control/prefix-er-v5-* -> shared/er-v6-20260927 (remove after the job)"
       },
       "estimated_rate_usd_per_hour": 4.5
+    },
+    {
+      "job_id": "er-v6s2-smoke-akash-20260927",
+      "account_alias": "akash-sagemaker-ap-south-1 (368083580896)",
+      "owner_session": "claude-newacct-20260927-1155",
+      "region": "ap-south-1",
+      "manifest": "s3://sagemaker-ap-south-1-368083580896/shared/er-v6s2-smoke-akash-20260927/prerun/ (updated: launcher limits 22 GiB memory / 3 GiB free)",
+      "maximum_runtime_minutes": 240,
+      "estimated_budget_usd": 1.5,
+      "authorization": "Akash approves directly (account owner)",
+      "scope": "baseline reproduction, stage-two CV, one France shard; no full inference, no additional workers",
+      "status": "reserved; not started",
+      "created_at": "2026-09-27T09:23:43.876736+00:00",
+      "verification": "as reported by the relayed request; this recorder has no access to that account"
     }
   ],
   "submission_history": [],

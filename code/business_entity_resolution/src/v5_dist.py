@@ -613,17 +613,24 @@ def run_final(task, store, ctx):
     threshold = manifest["threshold"]
     ids = pl.read_csv(Path(ctx.data) / "test" / "test_source1.tsv", separator="\t", quote_char=None,
                       columns=["entity_id"], infer_schema=False)["entity_id"]
-    frames = []
+    # Stream shards: keep per-query candidate strings and only above-threshold pairs.
+    cand_parts, above, total = [], [], 0
     for shard in task["inputs"]:
         path = store.download(f"score/{shard}.parquet", ctx.work / "in" / f"{shard}.parquet")
-        frames.append(pl.read_parquet(path))
+        frame = pl.read_parquet(path)
         path.unlink()
-    scores = pl.concat(frames)
-    del frames
+        total += len(frame)
+        cand_parts.append(frame.group_by("s1").agg(
+            pl.col("target_id").sort().str.join(",").alias("candidate_entity_ids")))
+        above.append(frame.filter(pl.col("p") >= threshold).select("s1", "t", "target_id", "p"))
+        del frame
+        gc.collect()
     base = pl.DataFrame({"s1": pl.Series(np.arange(len(ids), dtype=np.uint32)), "source1_entity_id": ids})
-    cand = scores.group_by("s1").agg(pl.col("target_id").sort().str.join(",").alias("candidate_entity_ids"))
+    cand = pl.concat(cand_parts)
+    del cand_parts
     # Filtering first is equivalent: a target's best claimant survives iff its p passes.
-    chosen = unique_assign(scores.filter(pl.col("p") >= threshold).select("s1", "t", "target_id", "p"))
+    chosen = unique_assign(pl.concat(above))
+    del above
     match = chosen.group_by("s1").agg(pl.col("target_id").sort().str.join(",").alias("matched_entity_ids"))
     out = ctx.work / "output"
     out.mkdir(parents=True, exist_ok=True)
@@ -635,7 +642,7 @@ def run_final(task, store, ctx):
         out / "candidate_pairs.tsv", separator="\t", quote_style="never")
     validator = Path(ctx.data).parent / "utils" / "validate_submission.py"
     report = {"test_queries": len(ids), "matched_queries": len(match), "matched_pairs": len(chosen),
-              "candidate_pairs": len(scores), "threshold": threshold, "model_sha256": manifest["model_sha256"]}
+              "candidate_pairs": total, "threshold": threshold, "model_sha256": manifest["model_sha256"]}
     if validator.exists():
         run = subprocess.run([sys.executable, str(validator), "--matching", str(out / "matching_results.tsv"),
                               "--candidate", str(out / "candidate_pairs.tsv"),
